@@ -1,0 +1,40 @@
+{
+  "name": "buutemplates",
+  "version": "1.0.0",
+  "description": "Generates templates for Buutti assignments",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "watch": "nodemon ./index.js",
+    "buutemplates": "node index.js"
+  },
+  "bin": {
+    "buutemplates": "index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vilu85/buutemplates.git"
+  },
+  "keywords": [
+    "generator",
+    "utilitity",
+    "buutti",
+    "templates"
+  ],
+  "author": "Ville Perkkio",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vilu85/buutemplates/issues"
+  },
+  "homepage": "https://github.com/vilu85/buutemplates#readme",
+  "dependencies": {
+    "fs": "^0.0.1-security",
+    "inquirer": "^9.2.2"
+  },
+  "devDependencies": {
+    "editorconfig": "^1.0.2",
+    "eslint": "^8.40.0",
+    "nodemon": "^2.0.22",
+    "prettier": "^2.8.8"
+  }
+}
