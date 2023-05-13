@@ -3,8 +3,9 @@
   "version": "1.0.0",
   "description": "Generates templates for Buutti assignments",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "jest",
+    "test": "jest --config=jest.config.json --require=@babel/register",
     "watch": "nodemon ./index.js",
     "buutemplates": "node index.js"
   },
@@ -28,12 +29,21 @@
   },
   "homepage": "https://github.com/vilu85/buutemplates#readme",
   "dependencies": {
-    "fs": "^0.0.1-security",
-    "inquirer": "^9.2.2"
+    "@inquirer/prompts": "^1.0.3",
+    "buufolders": "file:buufolders-1.1.0.tgz",
+    "colors": "^1.4.0",
+    "fs": "^0.0.1-security"
   },
   "devDependencies": {
+    "@babel/core": "^7.21.8",
+    "@babel/plugin-syntax-import-assertions": "^7.20.0",
+    "@babel/preset-env": "^7.21.5",
+    "@babel/register": "^7.21.0",
+    "babel-jest": "^29.5.0",
     "editorconfig": "^1.0.2",
     "eslint": "^8.40.0",
+    "eslint-plugin-jest": "^27.2.1",
+    "jest": "^29.5.0",
     "nodemon": "^2.0.22",
     "prettier": "^2.8.8"
   }

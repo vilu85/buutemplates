@@ -128,3 +128,9 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# buutemplates
+.buutemplates.json
+
+# Exclude buufolders dependency until it's released in npm
+!buufolders-1.1.0.tgz

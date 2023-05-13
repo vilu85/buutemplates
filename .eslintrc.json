@@ -11,6 +11,9 @@
         "ecmaVersion": "latest",
         "sourceType": "module"
     },
+    "plugins": [
+        "jest"
+    ],
     "rules": {
         "prefer-const": "error",
         "no-var": "error",
