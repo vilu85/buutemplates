@@ -69,7 +69,7 @@ export class BuuTemplates {
 
     constructor() {
         const projectRoot = process.cwd();
-        this.configFile = `${projectRoot}/.buutemplates.json`;
+        this.configFile = path.join(projectRoot, '.buutemplates.json');
 
         if (this.fileExists(this.configFile)) {
             const json = this.readJsonFile(this.configFile);
@@ -309,7 +309,7 @@ export class BuuTemplates {
      * }[]}
      */
     parseReadme(content) {
-        const regex = /## Assignment \d+\.\d+: [A-Za-z ]+\r?\n[\s\S]*?(?=\n## Assignment|$)/g;
+        const regex = /## Assignment \d+\.\d+: [\w .]+\r?\n[\s\S]*?(?=\n## Assignment|$)/gm;
         const assignments = content.match(regex);
         if (assignments) {
             const assignmentBlocks = assignments.map((value) => {
