@@ -14,11 +14,11 @@ const configFilePath = path.join(projectRoot, '.buutemplates.json');
 
 jest.mock('fs', () => {
     return {
-        readFileSync: jest.fn().mockImplementation((file, encoding) => {
-            const buf = Buffer.from(mockFiles[file], 'utf8');
+        readFileSync: jest.fn().mockImplementation((file, encoding = 'utf8') => {
+            const buf = Buffer.from(mockFiles[file], encoding);
             return buf;
         }),
-        readFile: jest.fn().mockImplementation((path, cb = (err, buf) => {}) => {
+        readFile: jest.fn().mockImplementation((path, cb = (_err, _buf) => {}) => {
             if (mockFiles[path]) {
                 const buf = Buffer.from(mockFiles[path], 'utf8');
                 cb(false, buf);
@@ -45,7 +45,7 @@ jest.mock('fs', () => {
         existsSync: jest.fn().mockImplementation((path) => {
             return Object.keys(mockFiles).findIndex((value) => path === value);
         }),
-        mkdirSync: jest.fn().mockImplementation((path, opts = {}) => {
+        mkdirSync: jest.fn().mockImplementation((path, _opts = {}) => {
             mockFiles[path] = '';
         }),
         readdir: jest.fn().mockImplementation((path = '', cb) => {
