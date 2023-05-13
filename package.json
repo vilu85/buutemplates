@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "jest --config=jest.config.json --require=@babel/register",
+    "test": "jest",
     "watch": "nodemon ./index.js",
     "buutemplates": "node index.js"
   },

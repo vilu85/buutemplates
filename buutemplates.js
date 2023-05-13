@@ -63,7 +63,7 @@ export class BuuTemplates {
      */
     filtered = null;
     generatePackageJson = false;
-    lectureNumber = 1;
+    lectureNumber = 0;
     assignmentStart = 0;
     assignmentEnd = 0;
 
@@ -148,6 +148,11 @@ export class BuuTemplates {
                 `Lecture${this.lectureNumber}`,
                 'README.md'
             );
+        } else if(this.options.readmePath && !this.lectureNumber) {
+            const lectureNumberParse = this.options.readmePath.match(/(?<=Lecture)(\d+)/);
+            if(lectureNumberParse) {
+                this.lectureNumber = lectureNumberParse[0];
+            }
         }
 
         this.assignmentStart =
