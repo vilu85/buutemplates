@@ -8,20 +8,25 @@ const path = require('path');
 jest.mock('fs', () => {
     return {
         readFileSync: jest.fn().mockImplementation((file, encoding) => {
-            const buf = Buffer(mockFiles[file], 'utf8');
+            const buf = Buffer.from(mockFiles[file], 'utf8');
             return buf;
         }),
         readFile: jest.fn().mockImplementation((path, cb = (err, buf) => {}) => {
-            const buf = Buffer(mockFiles[path], 'utf8');
-            cb(false, buf);
+            if(mockFiles[path]) {
+                const buf = Buffer.from(mockFiles[path], 'utf8');
+                cb(false, buf);
+            } else {
+                cb(new Error(`Mock file is missing: ${path}`), null);
+                const buf = Buffer.from(mockFiles[path], 'utf8');
+                cb(false, buf);
+            }
         }),
         writeFile: jest.fn().mockImplementation((file, data, cb) => {
             mockFiles[file] = data;
             cb(null);
         }),
-        writeFileSync: jest.fn().mockImplementation((file, data, cb) => {
+        writeFileSync: jest.fn().mockImplementation((file, data) => {
             mockFiles[file] = data;
-            cb(null);
         }),
         statSync: jest.fn().mockImplementation((path) => {
             if (mockFiles[path]) {
@@ -30,6 +35,24 @@ jest.mock('fs', () => {
                 return false;
             }
         }),
+        existsSync: jest.fn().mockImplementation((path) => {
+            return Object.keys(mockFiles).findIndex( (value) => path === value );
+        }),
+        mkdirSync: jest.fn().mockImplementation((path, opts = {}) => {
+            mockFiles[path] = '';
+        }),
+        readdir: jest.fn().mockImplementation((path = "", cb) => {
+            const files = Object.keys(mockFiles).filter( value => {
+                if(path === value) {
+                    return true;
+                } else if(path.startsWith(value)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+            cb(false, files);
+        })
     };
 });
 
@@ -55,7 +78,7 @@ describe('BuuTemplates', () => {
 
     afterEach(() => {});
 
-    it('should create assignment templates', async () => {
+    it('should create .buutemplates.json configuration file', async () => {
         const projectRoot = process.cwd();
         const configFile = path.join(projectRoot, '.buutemplates.json');
 
@@ -75,8 +98,7 @@ describe('BuuTemplates', () => {
         inputMock.mockImplementationOnce(() => Promise.resolve(readmeMockPath));
         confirmMock.mockImplementationOnce(() => Promise.resolve(true));
         inputMock.mockImplementationOnce(() => Promise.resolve(1));
-        inputMock.mockImplementationOnce(() => Promise.resolve(2));
-        inputMock.mockImplementationOnce(() => Promise.resolve(false));
+        inputMock.mockImplementationOnce(() => Promise.resolve(3));
 
         const buutemplates = new BuuTemplates();
         await buutemplates.setup();
@@ -84,7 +106,9 @@ describe('BuuTemplates', () => {
         // Expect the function to behave as expected with the provided input
         expect(buutemplates.options.readmePath).toBe(readmeMockPath);
         expect(buutemplates.assignmentStart).toBe(1);
-        expect(buutemplates.assignmentEnd).toBe(2);
-        expect(inputMock).toHaveBeenCalledTimes(4);
+        expect(buutemplates.assignmentEnd).toBe(3);
+        expect(confirmMock).toHaveBeenCalledTimes(1);
+        expect(inputMock).toHaveBeenCalledTimes(3);
+        expect(mockFiles[configFile]).toBeDefined();
     });
 });

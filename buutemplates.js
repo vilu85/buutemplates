@@ -78,8 +78,6 @@ export class BuuTemplates {
                 ...json,
             };
         }
-
-        this.init();
     }
 
     init() {
