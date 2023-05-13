@@ -1,26 +1,9 @@
+const inquirer = require('@inquirer/prompts');
 import { BuuTemplates } from '../buutemplates.js';
+
+// eslint-disable-next-line no-unused-vars
 const fs = require('fs');
 const path = require('path');
-const { promisify } = require('util');
-
-const join = path.join;
-const writeFile = promisify(fs.writeFile);
-
-const readFileSync = jest.fn().mockImplementation((file, encoding) => {
-	return mockFiles[file];
-});
-
-const mockFiles = {
-    'README.md':
-        '## Assignment 1.1: Test assignment 1\n\n' +
-        'Test description 1\n\n' +
-        '## Assignment 1.2: Test assignment 2\n\n' +
-        'Test description 2\n\n' +
-        '## Assignment 1.3: Test assignment 3\n\n' +
-        'Test description\n\n' +
-        '## Assignment 1.4: Test assignment 4\n\n' +
-        'Test description 4\n\n',
-};
 
 jest.mock('fs', () => {
     return {
@@ -33,60 +16,75 @@ jest.mock('fs', () => {
             cb(false, buf);
         }),
         writeFile: jest.fn().mockImplementation((file, data, cb) => {
-            mockFiles[file] = JSON.parse(data);
+            mockFiles[file] = data;
             cb(null);
         }),
         writeFileSync: jest.fn().mockImplementation((file, data, cb) => {
-            mockFiles[file] = JSON.parse(data);
+            mockFiles[file] = data;
             cb(null);
         }),
         statSync: jest.fn().mockImplementation((path) => {
             if (mockFiles[path]) {
-                return 1;
+                return { size: 1 };
             } else {
-                return 0;
+                return false;
             }
         }),
     };
 });
 
+// Mocked files during testing
+const mockFiles = {};
+
 jest.mock('@inquirer/prompts');
 
-// jest.mock('@inquirer/prompts', () => ({
-//     input: jest.fn().mockResolvedValueOnce({ path: '/example/path' })
-// }));
-
 describe('BuuTemplates', () => {
-    // let buuTemplates;
-
     beforeEach(() => {
         jest.clearAllMocks();
+
+        // Mock assignment README.md file
+        mockFiles[path.join('test', 'assignments', 'Lecture1', 'README.md')] = '## Assignment 1.1: Test assignment 1\n\n' +
+        'Test description 1\n\n' +
+        '## Assignment 1.2: Test assignment 2\n\n' +
+        'Test description 2\n\n' +
+        '## Assignment 1.3: Test assignment 3\n\n' +
+        'Test description\n\n' +
+        '## Assignment 1.4: Test assignment 4\n\n' +
+        'Test description 4\n\n';
     });
 
     afterEach(() => {});
 
     it('should create assignment templates', async () => {
-        jest.spyOn(process, 'cwd').mockReturnValue('/path/to/project');
-        jest.spyOn(console, 'log').mockImplementation(() => {});
+        const projectRoot = process.cwd();
+        const configFile = path.join(projectRoot, '.buutemplates.json');
 
-        input.mockResolvedValueOnce({ projectPath: '/path/to/project' });
+        // Setup readme file mock path
+        const readmeMockPath = path.join('test', 'assignments', 'Lecture1', 'README.md');
+        mockFiles[configFile] = JSON.stringify({
 
-        const bt = new BuuTemplates();
-        await bt.init();
+        });
 
-        expect(input).toHaveBeenCalledTimes(1);
-        expect(input).toHaveBeenCalledWith(
-        expect.objectContaining({
-            message: 'Please enter the path to your project root directory',
-        })
-        );
-        const buuTemplates = new BuuTemplates();
-        expect(buuTemplates.options).toEqual(/* expected options */);
+        const inputMock = jest.fn();
+        const confirmMock = jest.fn();
 
-        const file = join(__dirname, 'package.json');
-        const content = await readFileSync(file, 'utf8');
+        // Mock inquirer functions
+        inquirer.input = inputMock;
+        inquirer.confirm = confirmMock;
 
-        expect(fs.writeFile).toHaveBeenCalledTimes(1);
-        expect(content).toBe('1.0.1');
+        inputMock.mockImplementationOnce(() => Promise.resolve(readmeMockPath));
+        confirmMock.mockImplementationOnce(() => Promise.resolve(true));
+        inputMock.mockImplementationOnce(() => Promise.resolve(1));
+        inputMock.mockImplementationOnce(() => Promise.resolve(2));
+        inputMock.mockImplementationOnce(() => Promise.resolve(false));
+
+        const buutemplates = new BuuTemplates();
+        await buutemplates.setup();
+
+        // Expect the function to behave as expected with the provided input
+        expect(buutemplates.options.readmePath).toBe(readmeMockPath);
+        expect(buutemplates.assignmentStart).toBe(1);
+        expect(buutemplates.assignmentEnd).toBe(2);
+        expect(inputMock).toHaveBeenCalledTimes(4);
     });
 });
