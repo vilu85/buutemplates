@@ -110,6 +110,12 @@ describe('BuuTemplates', () => {
         inquirer.input = inputMock;
         inquirer.confirm = confirmMock;
 
+        // Mock user input for lecture folder base name
+        inputMock.mockImplementationOnce(() => Promise.resolve('Lecture'));
+        // Mock user input for assignment file base name
+        inputMock.mockImplementationOnce(() => Promise.resolve('index'));
+        // Mock user input for the question 'Use padding?'
+        confirmMock.mockImplementationOnce(() => Promise.resolve(false));
         // Mock user input for README.md full path
         inputMock.mockImplementationOnce(() => Promise.resolve(readmeMockPath));
         // Mock user input for the question 'Save configuration?'
@@ -128,14 +134,14 @@ describe('BuuTemplates', () => {
         expect(buutemplates.assignmentEnd).toBe(3);
 
         // Expect user inputs be called
-        expect(confirmMock).toHaveBeenCalledTimes(1);
-        expect(inputMock).toHaveBeenCalledTimes(3);
+        expect(confirmMock).toHaveBeenCalledTimes(2);
+        expect(inputMock).toHaveBeenCalledTimes(5);
 
         // Expect configuration file be defined
         expect(mockFiles[configFilePath]).toBeDefined();
     });
 
-    it('should create assignment templates', async () => {
+    it('should create assignment templates using existing configuration', async () => {
         // Mock .buutemplates.json configuration
         const projectRoot = process.cwd();
         const configFile = path.join(projectRoot, '.buutemplates.json');
@@ -144,8 +150,6 @@ describe('BuuTemplates', () => {
             padNumbers: false,
             folderBasename: 'Lecture',
             assignmentFileBasename: 'index',
-            assignmentFilenamePrefix: '',
-            assignmentFilenameSuffix: '',
             readmePath: readmeMockPath,
         });
 
@@ -198,8 +202,6 @@ describe('BuuTemplates', () => {
             padNumbers: false,
             folderBasename: 'Lecture',
             assignmentFileBasename: 'index',
-            assignmentFilenamePrefix: '',
-            assignmentFilenameSuffix: '',
             lectureRootPath: path.join('test', 'assignments'),
         });
 
@@ -248,6 +250,57 @@ describe('BuuTemplates', () => {
         expect(mockFiles).toEqual(
             expect.not.objectContaining({
                 [path.join(projectRoot, 'Lecture2', 'Assignment2.3', 'index.ts')]: expect.any(String),
+            })
+        );
+    });
+
+    it('should create assignment templates by using tokens in name', async () => {
+        // Mock .buutemplates.json configuration with lecture root path
+        const projectRoot = process.cwd();
+        const configFile = path.join(projectRoot, '.buutemplates.json');
+        mockFiles[configFile] = JSON.stringify({
+            fileType: '.ts',
+            padNumbers: false,
+            folderBasename: 'Lecture',
+            assignmentFileBasename: 'assignment%LECTURE%.%ASSIGNMENT%',
+            lectureRootPath: path.join('test', 'assignments'),
+        });
+
+        // Mock inquirer functions
+        const inputMock = jest.fn();
+        inquirer.input = inputMock;
+
+        // Mock user input for the lecture number
+        inputMock.mockImplementationOnce(() => Promise.resolve(2));
+        // Mock user input for the assignment start number
+        inputMock.mockImplementationOnce(() => Promise.resolve(1));
+        // Mock user input for the assignment end number
+        inputMock.mockImplementationOnce(() => Promise.resolve(3));
+
+        // Run generation
+        const buutemplates = new BuuTemplates();
+        await buutemplates.setupAndGenerate();
+
+        // Expect lecture number be set
+        expect(buutemplates.lectureNumber).toBe(2);
+        // Expect assignment start and end inputs be set
+        expect(buutemplates.assignmentStart).toBe(1);
+        expect(buutemplates.assignmentEnd).toBe(3);
+
+        // Expect assignmentX.XX.ts files be generated for assignments 2.1-2.3
+        expect(mockFiles).toEqual(
+            expect.objectContaining({
+                [path.join(projectRoot, 'Lecture2', 'Assignment2.1', 'assignment2.1.ts')]: expect.any(String),
+            })
+        );
+        expect(mockFiles).toEqual(
+            expect.objectContaining({
+                [path.join(projectRoot, 'Lecture2', 'Assignment2.2', 'assignment2.2.ts')]: expect.any(String),
+            })
+        );
+        expect(mockFiles).toEqual(
+            expect.objectContaining({
+                [path.join(projectRoot, 'Lecture2', 'Assignment2.3', 'assignment2.3.ts')]: expect.any(String),
             })
         );
     });
