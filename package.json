@@ -10,7 +10,7 @@
     "buutemplates": "node index.js"
   },
   "bin": {
-    "buutemplates": "index.js"
+    "buutemplates": "./index.js"
   },
   "repository": {
     "type": "git",

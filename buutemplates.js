@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import colors from 'colors';
 import { input, confirm } from '@inquirer/prompts';
-import { generateFolderRange } from 'buufolders/buuf';
+import { generateFolderRange } from 'buufolders/buuf.js';
 
 /**
  * Copyright (c) 2023 Ville Perkkio
@@ -27,10 +27,10 @@ import { generateFolderRange } from 'buufolders/buuf';
  *
  * @class BuuTemplates
  */
-const [_, __, readmePath, lecture, assignmentStart, assignmentEnd] = process.argv;
+const [_, __, lecture, assignmentStart, assignmentEnd, readmePath] = process.argv;
 
 /**
- * @typedef {import('../Buufolders/FolderGeneratorNPM/buuf').BuuFoldersOptions} BuuFoldersOptions
+ * @typedef {import('buufolders/buuf.js').BuuFoldersOptions} BuuFoldersOptions
  */
 /**
  * @typedef {Object} BuuTemplateOptions
@@ -47,14 +47,15 @@ export class BuuTemplates {
         padNumbers: false,
         folderBasename: 'Lecture',
         assignmentFileBasename: 'index',
-        assignmentFilenamePrefix: '',
-        assignmentFilenameSuffix: '',
     };
 
     /**
      * @type {string} config json file path
      */
     configFile = null;
+
+    /** @type {boolean} */
+    configurationExists = false;
 
     /**
      * Readme filtered assignment text blocks
@@ -77,6 +78,12 @@ export class BuuTemplates {
                 ...this.options,
                 ...json,
             };
+            this.configurationExists = true;
+        }
+
+        if (readmePath && readmePath.length && !this.validateReadmePath(readmePath)) {
+            console.log(`Invalid Lecture README.md path: ${colors.red(readmePath)}`);
+            process.exit(0);
         }
     }
 
@@ -89,35 +96,81 @@ export class BuuTemplates {
         await this.generateTemplates();
     }
 
+    isValidName(name) {
+        // Define a regular expression that matches any character that is not a letter, digit, underscore, or hyphen
+        const regex = /[^a-zA-Z0-9_-]/;
+
+        // Test if the string contains any non-allowed characters
+        return !regex.test(name);
+    }
+
+    validateReadmePath(value) {
+        const _readmePath = value.trim().endsWith('README.md') ? value.trim() : path.join(value.trim(), 'README.md');
+
+        if (this.fileExists(path.join(value.trim(), 'Lecture1', 'README.md'))) {
+            // Check if given path is lecture folder root
+            this.configurationExists = true;
+            this.options.lectureRootPath = value.trim();
+        } else if (this.fileExists(_readmePath)) {
+            // Check if given path is a specific lecture's README.md
+            this.options.readmePath = _readmePath;
+        } else {
+            console.log(`README.md file could not be found from ${colors.red(_readmePath)}`);
+            console.log(`The path was not a valid lecture root path: ${colors.red(value.trim())}`);
+            return false;
+        }
+        return true;
+    }
+
     async setup() {
-        let shouldConfirmSave = false;
+        if (!this.configurationExists) {
+            this.options.folderBasename = await input({
+                message: 'Enter base name for lecture folders:',
+                default: this.options.folderBasename,
+                validate: (value) => {
+                    if (this.isValidName(value)) {
+                        return true;
+                    } else {
+                        return 'Invalid lecture folder base name.';
+                    }
+                },
+            });
+
+            this.options.assignmentFileBasename = await input({
+                message: 'Enter base name for assignment files:',
+                default: this.options.assignmentFileBasename,
+                validate: (value) => {
+                    if (this.isValidName(value)) {
+                        return true;
+                    } else {
+                        return 'Invalid assignment file base name.';
+                    }
+                },
+            });
+
+            this.options.padNumbers = await confirm({
+                message: 'Do you want to use padding in numbers?',
+                default: this.options.padNumbers,
+            });
+
+            this.configurationExists = true;
+        }
 
         while (!this.options?.readmePath && !this.options?.lectureRootPath) {
-            let enteredPath = await input({ message: 'Enter lecture README.md path or root path of Lecture folders:' });
+            const enteredPath = await input({
+                message: 'Enter lecture README.md path or root path of Lecture folders:',
+            });
             if (enteredPath) {
-                enteredPath = enteredPath.trim();
-                const _readmePath = enteredPath.endsWith('README.md')
-                    ? enteredPath
-                    : path.join(enteredPath, 'README.md');
-
-                // Check if given path is lecture folder root
-                if (this.fileExists(path.join(enteredPath, 'Lecture1', 'README.md'))) {
-                    shouldConfirmSave = true;
-                    this.options.lectureRootPath = enteredPath;
-                } else if (this.fileExists(_readmePath)) {
-                    shouldConfirmSave = true;
-                    this.options.readmePath = _readmePath;
-                } else {
-                    console.log(`README.md file could not be found from ${colors.red(_readmePath)}`);
-                    console.log(`The path was not a valid lecture root path: ${colors.red(enteredPath)}`);
-                }
+                this.validateReadmePath(enteredPath);
             }
         }
 
-        if (shouldConfirmSave) {
+        if (this.configurationExists) {
             const savePath = await confirm({ message: 'Do you want save the path for later use?' });
             if (savePath) {
-                await this.writeJsonFile(this.configFile, this.options);
+                // eslint-disable-next-line no-unused-vars
+                const { readmePath, ...saveableOptions } = this.options;
+                await this.writeJsonFile(this.configFile, saveableOptions);
             }
         }
 
@@ -148,9 +201,9 @@ export class BuuTemplates {
                 `Lecture${this.lectureNumber}`,
                 'README.md'
             );
-        } else if(this.options.readmePath && !this.lectureNumber) {
+        } else if (this.options.readmePath && !this.lectureNumber) {
             const lectureNumberParse = this.options.readmePath.match(/(?<=Lecture)(\d+)/);
-            if(lectureNumberParse) {
+            if (lectureNumberParse) {
                 this.lectureNumber = lectureNumberParse[0];
             }
         }
@@ -163,7 +216,7 @@ export class BuuTemplates {
                     if (isNaN(value)) {
                         return 'Invalid number';
                     } else if (value < 0) {
-                        return 'Assignment number cannot be less than 1';
+                        return 'Assignment number cannot be less than 0';
                     } else {
                         return true;
                     }
