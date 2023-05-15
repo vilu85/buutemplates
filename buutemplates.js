@@ -299,7 +299,7 @@ export class BuuTemplates {
         if (assignmentBlocks && assignmentBlocks.length) {
             this.filtered = assignmentBlocks;
             if (this.filtered && this.filtered.length) {
-                console.log(`Generating ${this.assignmentEnd - this.assignmentStart} index.ts files...`);
+                console.log(`Generating ${this.assignmentEnd - this.assignmentStart + 1} index.ts files...`);
                 generateFolderRange(
                     this.lectureNumber,
                     this.assignmentStart,
