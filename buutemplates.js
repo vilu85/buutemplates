@@ -53,9 +53,8 @@ export class BuuTemplates {
      * @type {string} config json file path
      */
     configFile = null;
-
-    /** @type {boolean} */
     configurationExists = false;
+    askConfigurationSave = false;
 
     /**
      * Readme filtered assignment text blocks
@@ -154,6 +153,7 @@ export class BuuTemplates {
             });
 
             this.configurationExists = true;
+            this.askConfigurationSave = true;
         }
 
         while (!this.options?.readmePath && !this.options?.lectureRootPath) {
@@ -162,11 +162,14 @@ export class BuuTemplates {
             });
             if (enteredPath) {
                 this.validateReadmePath(enteredPath);
+                if (this.options?.lectureRootPath) {
+                    this.askConfigurationSave = true;
+                }
             }
         }
 
-        if (this.configurationExists) {
-            const savePath = await confirm({ message: 'Do you want save the path for later use?' });
+        if (this.configurationExists && this.askConfigurationSave) {
+            const savePath = await confirm({ message: 'Do you want save the the configuration?' });
             if (savePath) {
                 // eslint-disable-next-line no-unused-vars
                 const { readmePath, ...saveableOptions } = this.options;
@@ -278,6 +281,49 @@ export class BuuTemplates {
         return this.filtered.find((value) => {
             return Object.keys(value)[0] === String(num);
         });
+    }
+
+    /**
+     * Returns a full file path for the lecture and assignment numbers.
+     *
+     * @param {number} lectureNumber
+     * @param {number} assignmentNumber
+     * @param {BuuFoldersOptions} options
+     * @return {string}
+     */
+    getAssignmentFilePath(lectureNumber, assignmentNumber, options) {
+        const projectRoot = process.cwd();
+        const lectureFolder = options.padNumbers
+            ? `${options.folderBasename}${String(lectureNumber).padStart(2, '0')}`
+            : `${options.folderBasename}${String(lectureNumber)}`;
+        const lectureFolderFullPath = path.join(projectRoot, lectureFolder);
+        const formattedAssignmentNumber = options?.padNumbers
+            ? String(assignmentNumber).padStart(2, '0')
+            : assignmentNumber;
+        const assignmentFolder = `Assignment${lectureNumber}.${formattedAssignmentNumber}`;
+        const assignmentFile = this.getAssignmentFilename(lectureNumber, assignmentNumber, options);
+
+        return path.join(lectureFolderFullPath, assignmentFolder, assignmentFile);
+    }
+
+    /**
+     * Returns filename
+     * @param {number} lectureNumber
+     * @param {number} assignmentNumber
+     * @param {BuuFoldersOptions} options
+     */
+    getAssignmentFilename(lectureNumber, assignmentNumber, options) {
+        if (!options.fileType.startsWith('.')) {
+            options.fileType = '.' + options.fileType;
+        }
+        return (
+            options.assignmentFileBasename
+                .replace('%LECTURE%', lectureNumber)
+                .replace(
+                    '%ASSIGNMENT%',
+                    options.padNumbers ? String(assignmentNumber).padStart(2, '0') : assignmentNumber
+                ) + options.fileType
+        );
     }
 
     /**

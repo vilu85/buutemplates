@@ -7,7 +7,8 @@
   "scripts": {
     "test": "jest",
     "watch": "nodemon ./index.js",
-    "buutemplates": "node index.js"
+    "buutemplates": "node index.js",
+    "lint": "eslint ."
   },
   "bin": {
     "buutemplates": "./index.js"
@@ -30,7 +31,7 @@
   "homepage": "https://github.com/vilu85/buutemplates#readme",
   "dependencies": {
     "@inquirer/prompts": "^1.0.3",
-    "buufolders": "file:buufolders-1.1.0.tgz",
+    "buufolders": "^1.0.7",
     "colors": "^1.4.0",
     "fs": "^0.0.1-security"
   },

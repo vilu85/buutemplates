@@ -49,15 +49,13 @@ jest.mock('fs', () => {
             mockFiles[path] = '';
         }),
         readdir: jest.fn().mockImplementation((path = '', cb) => {
-            const files = Object.keys(mockFiles).filter((value) => {
-                if (path === value) {
-                    return true;
-                } else if (path.startsWith(value)) {
-                    return true;
-                } else {
-                    return false;
+            const files = Object.entries(mockFiles).reduce((acc, [filePath, fileContent]) => {
+                if (filePath === path || filePath.startsWith(path)) {
+                    return [...acc, { filePath, fileContent }];
                 }
-            });
+                return acc;
+            }, []);
+
             cb(false, files);
         }),
     };
@@ -301,6 +299,70 @@ describe('BuuTemplates', () => {
         expect(mockFiles).toEqual(
             expect.objectContaining({
                 [path.join(projectRoot, 'Lecture2', 'Assignment2.3', 'assignment2.3.ts')]: expect.any(String),
+            })
+        );
+    });
+
+    it('should skip existing assignment files', async () => {
+        // Mock .buutemplates.json configuration
+        const projectRoot = process.cwd();
+        const configFile = path.join(projectRoot, '.buutemplates.json');
+        mockFiles[configFile] = JSON.stringify({
+            fileType: '.ts',
+            padNumbers: false,
+            folderBasename: 'Lecture',
+            assignmentFileBasename: 'assignment_file_%ASSIGNMENT%',
+            lectureRootPath: path.join('test', 'assignments'),
+            debug: true,
+        });
+
+        // Mock existing assignment folders and files
+        mockFiles[path.join(projectRoot, 'Lecture2', 'Assignment2.1', 'assignment_file_1.ts')] = 'TODO';
+        mockFiles[path.join(projectRoot, 'Lecture2', 'Assignment2.2', 'assignment_file_2.ts')] = 'TODO';
+        mockFiles[path.join(projectRoot, 'Lecture2', 'Assignment2.3', 'assignment_file_3.ts')] = 'TODO';
+
+        // Mock inquirer functions
+        const inputMock = jest.fn();
+        inquirer.input = inputMock;
+
+        // Mock user input for the lecture start number
+        inputMock.mockImplementationOnce(() => Promise.resolve(2));
+        // Mock user input for the assignment start number
+        inputMock.mockImplementationOnce(() => Promise.resolve(1));
+        // Mock user input for the assignment end number
+        inputMock.mockImplementationOnce(() => Promise.resolve(4));
+
+        // Run generation
+        const buutemplates = new BuuTemplates();
+        await buutemplates.setupAndGenerate();
+
+        // Expect assignment start and end inputs be set
+        expect(buutemplates.assignmentStart).toBe(1);
+        expect(buutemplates.assignmentEnd).toBe(4);
+
+        // Expect to skip assignment_file_X.ts files 1-3 and write 2.4
+        expect(mockFiles).toEqual(
+            expect.objectContaining({
+                [path.join(projectRoot, 'Lecture2', 'Assignment2.1', 'assignment_file_1.ts')]:
+                    expect.stringContaining('TODO'),
+            })
+        );
+        expect(mockFiles).toEqual(
+            expect.objectContaining({
+                [path.join(projectRoot, 'Lecture2', 'Assignment2.2', 'assignment_file_2.ts')]:
+                    expect.stringContaining('TODO'),
+            })
+        );
+        expect(mockFiles).toEqual(
+            expect.objectContaining({
+                [path.join(projectRoot, 'Lecture2', 'Assignment2.3', 'assignment_file_3.ts')]:
+                    expect.stringContaining('TODO'),
+            })
+        );
+        expect(mockFiles).toEqual(
+            expect.objectContaining({
+                [path.join(projectRoot, 'Lecture2', 'Assignment2.4', 'assignment_file_4.ts')]:
+                    expect.stringMatching(/Assignment 2\.4/gm),
             })
         );
     });
