@@ -1,4 +1,4 @@
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg?cacheSeconds=2592000)
+![Version](https://img.shields.io/badge/version-1.0.1-blue.svg?cacheSeconds=2592000)
 ![Node.js](https://github.com/vilu85/buutemplates/actions/workflows/node.js.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](#)
 # BuuTemplates
@@ -86,6 +86,27 @@ To use BuuTemplates, follow the steps below:
 1. Open a terminal and navigate to the directory where you have installed BuuTemplates.
 
 2. Type the following command to run the tool:
+
+```sh
+npx buutemplates
+```
+
+or add BuuTemplates to your project's `package.json` scripts:
+
+```sh
+{
+  "name": "YourProjectName",
+  "version": "1.0.0",
+  "description": "YourProjectDescription",
+  "scripts": {
+    "buutemplates": "buutemplates",
+    // ... your other scripts
+  }
+  //...
+}
+```
+
+and type the following command to run the tool:
 
 ```sh
 npm run buutemplates
