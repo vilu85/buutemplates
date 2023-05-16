@@ -234,7 +234,7 @@ export class BuuTemplates {
                         return 'Invalid number';
                     } else if (value < 0) {
                         return 'Assignment number cannot be less than 1';
-                    } else if (value < this.assignmentStart) {
+                    } else if (value < Number(this.assignmentStart)) {
                         return 'The last assignment number cannot be smaller than the first assignment number.';
                     } else {
                         return true;
@@ -347,9 +347,9 @@ export class BuuTemplates {
             if (this.filtered && this.filtered.length) {
                 console.log(`Generating ${this.assignmentEnd - this.assignmentStart + 1} index.ts files...`);
                 generateFolderRange(
-                    this.lectureNumber,
-                    this.assignmentStart,
-                    this.assignmentEnd,
+                    Number(this.lectureNumber),
+                    Number(this.assignmentStart),
+                    Number(this.assignmentEnd),
                     this.options,
                     (num, assignNum) => this.fileContentProvider(num, assignNum)
                 );
@@ -411,8 +411,12 @@ export class BuuTemplates {
      * }[]}
      */
     parseReadme(content) {
-        const regex = /## Assignment \d+\.\d+: [\w .]+\r?\n[\s\S]*?(?=\n## Assignment|$)/gm;
-        const assignments = content.match(regex);
+        const regex = /(?=## Assignment \d+\.\d+:)/;
+        const blocks = content.split(regex).map((block) => {
+            return block;
+        });
+        const assignments = blocks.filter((value) => value.match(/(?=## Assignment \d+\.\d+:)/));
+
         if (assignments) {
             const assignmentBlocks = assignments.map((value) => {
                 const assignmentNumber = value.match(/## Assignment (\d+)\.(\d+)/);
