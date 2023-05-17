@@ -211,6 +211,8 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 
 * **Ville Perkkio** - *Initial work* - [Website](https://github.com/vilu85) - [@vilu85](https://github.com/vilu85) - [@vilu85](https://linkedin.com/in/vilu85)
 
+* **Olli Lantela** - *Testing and brainstorming* - [Website](https://github.com/opafin) - [@opafin](https://github.com/opafin)
+
 ## License
 
 Copyright © 2023 [Ville Perkkio](https://github.com/vilu85)

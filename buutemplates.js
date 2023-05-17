@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import colors from 'colors';
-import { input, confirm } from '@inquirer/prompts';
+import { input, confirm, } from '@inquirer/prompts';
 import { generateFolderRange } from 'buufolders/buuf.js';
 
 /**
@@ -46,7 +46,7 @@ export class BuuTemplates {
         fileType: '.ts',
         padNumbers: false,
         folderBasename: 'Lecture',
-        assignmentFileBasename: 'index',
+        assignmentFileBasename: 'index'
     };
 
     /**
@@ -61,11 +61,14 @@ export class BuuTemplates {
      *
      * @type {{[assignmentIdentifier: string]: string[]}[]}
      */
-    filtered = null;
+    assignments = null;
     generatePackageJson = false;
     lectureNumber = 0;
     assignmentStart = 0;
     assignmentEnd = 0;
+
+    
+
 
     constructor() {
         const projectRoot = process.cwd();
@@ -80,9 +83,9 @@ export class BuuTemplates {
             this.configurationExists = true;
         }
 
+        // Check if readmePath was given in args.
         if (readmePath && readmePath.length && !this.validateReadmePath(readmePath)) {
-            console.log(`Invalid Lecture README.md path: ${colors.red(readmePath)}`);
-            process.exit(0);
+            throw Error(`Invalid Lecture README.md path: ${colors.red(readmePath)}`);
         }
     }
 
@@ -91,8 +94,12 @@ export class BuuTemplates {
     }
 
     async setupAndGenerate() {
-        await this.setup();
-        await this.generateTemplates();
+        try {
+            await this.setup();
+            await this.generateTemplates();
+        } catch (error) {
+            console.log(error);
+        }
     }
 
     isValidName(name) {
@@ -134,7 +141,7 @@ export class BuuTemplates {
                     }
                 },
             });
-
+            
             this.options.assignmentFileBasename = await input({
                 message: 'Enter base name for assignment files:',
                 default: this.options.assignmentFileBasename,
@@ -199,15 +206,22 @@ export class BuuTemplates {
                         }
                     },
                 }));
+                
             this.options.readmePath = path.join(
                 this.options.lectureRootPath,
                 `Lecture${this.lectureNumber}`,
                 'README.md'
             );
-        } else if (this.options.readmePath && !this.lectureNumber) {
-            const lectureNumberParse = this.options.readmePath.match(/(?<=Lecture)(\d+)/);
-            if (lectureNumberParse) {
-                this.lectureNumber = lectureNumberParse[0];
+
+            this.readme = await this.getReadmeContent();
+            this.parseReadme(this.readme);
+        } else if (this.options.readmePath && this.lectureNumber === 0) {
+            this.readme = await this.getReadmeContent();
+            this.parseReadme(this.readme);
+            
+            if (this.parsedLectureNumber) {
+                this.lectureNumber = this.parsedLectureNumber;
+                console.log(`Lecture ${colors.yellow(this.lectureNumber)} found from README.md`);
             }
         }
 
@@ -278,7 +292,7 @@ export class BuuTemplates {
     }
 
     getAssignmentEntry(num) {
-        return this.filtered.find((value) => {
+        return this.assignments.find((value) => {
             return Object.keys(value)[0] === String(num);
         });
     }
@@ -293,11 +307,12 @@ export class BuuTemplates {
      */
     getAssignmentFilePath(lectureNumber, assignmentNumber, options) {
         const projectRoot = process.cwd();
-        const lectureFolder = options.padNumbers
-            ? `${options.folderBasename}${String(lectureNumber).padStart(2, '0')}`
-            : `${options.folderBasename}${String(lectureNumber)}`;
+        const formattedLectureNumber = options.padNumbers ? String(lectureNumber).padStart(2, '0') : String(lectureNumber);
+
+        const lectureFolder = `${options.folderBasename}${formattedLectureNumber}`;
         const lectureFolderFullPath = path.join(projectRoot, lectureFolder);
-        const formattedAssignmentNumber = options?.padNumbers
+
+        const formattedAssignmentNumber = options.padNumbers
             ? String(assignmentNumber).padStart(2, '0')
             : assignmentNumber;
         const assignmentFolder = `Assignment${lectureNumber}.${formattedAssignmentNumber}`;
@@ -328,10 +343,10 @@ export class BuuTemplates {
 
     /**
      * Provides assignment descriptions during index.ts generation
-     * @param {number} lectureNumber
+     * @param {number} _lectureNumber
      * @param {number} assignmentNumber
      */
-    fileContentProvider(lectureNumber, assignmentNumber) {
+    fileContentProvider(_lectureNumber, assignmentNumber) {
         const _assignmentNumber = '' + assignmentNumber;
         const assignmentEntry = this.getAssignmentEntry(assignmentNumber);
         const data = this.generateIndexTs(_assignmentNumber, assignmentEntry);
@@ -339,29 +354,19 @@ export class BuuTemplates {
     }
 
     async generateTemplates() {
-        this.readme = await this.getReadmeContent();
-        const assignmentBlocks = this.parseReadme(this.readme);
-
-        if (assignmentBlocks && assignmentBlocks.length) {
-            this.filtered = assignmentBlocks;
-            if (this.filtered && this.filtered.length) {
-                console.log(`Generating ${this.assignmentEnd - this.assignmentStart + 1} index.ts files...`);
-                generateFolderRange(
-                    Number(this.lectureNumber),
-                    Number(this.assignmentStart),
-                    Number(this.assignmentEnd),
-                    this.options,
-                    (num, assignNum) => this.fileContentProvider(num, assignNum)
-                );
-            } else {
-                console.log(
-                    `Error: There is no assignments in given range (${this.assignmentStart}-${this.assignmentEnd})`
-                );
-                process.exit(1);
-            }
+        if (this.assignments && this.assignments.length) {
+            console.log(`Generating ${this.assignmentEnd - this.assignmentStart + 1} index.ts files...`);
+            generateFolderRange(
+                Number(this.lectureNumber),
+                Number(this.assignmentStart),
+                Number(this.assignmentEnd),
+                this.options,
+                (num, assignNum) => this.fileContentProvider(num, assignNum)
+            );
         } else {
-            console.log(`Error: Assignments could not be found from the file '${this.options.readmePath}'`);
-            process.exit(1);
+            throw Error(
+                `Error: There is no assignments in given range (${this.assignmentStart}-${this.assignmentEnd})`
+            );
         }
     }
 
@@ -402,23 +407,44 @@ export class BuuTemplates {
         });
     }
 
+    splitLineAtSpace(line) {
+        const lastSpaceIndex = line.lastIndexOf(' ', this.maxLineLength);
+
+        if (lastSpaceIndex !== -1) {
+            const segment1 = line.substring(0, lastSpaceIndex).trim();
+            const segment2 = line.substring(lastSpaceIndex + 1).trim();
+
+            return [segment1, ...this.splitLineAtSpace(segment2)];
+        }
+
+        return [line];
+    }
+
     /**
-     * Parses readme content
+     * Parses readme content and sets @var parsedLecture number and
+     * @var assignments
      *
      * @param {string} content
      * @return {{
      *  [assignmentIdentifier: string]: string[];
      * }[]}
      */
-    parseReadme(content) {
+    parseReadme(content) {        
+        const parsedLecture = content.match(/## Assignment (\d+)\.(\d+)/);
+        if(parsedLecture && parsedLecture.length) {
+            this.parsedLectureNumber = Number(parsedLecture[1]);
+        }
+        
         const regex = /(?=## Assignment \d+\.\d+:)/;
         const blocks = content.split(regex).map((block) => {
             return block;
         });
-        const assignments = blocks.filter((value) => value.match(/(?=## Assignment \d+\.\d+:)/));
 
-        if (assignments) {
-            const assignmentBlocks = assignments.map((value) => {
+        // Filter assignments from content blocks
+        const filteredBlocks = blocks.filter((value) => value.match(/(?=## Assignment \d+\.\d+:)/));
+        if (filteredBlocks) {
+            // Map filtered blocks to the array in form: assignment number => assignment description
+            this.assignments = filteredBlocks.map((value) => {
                 const assignmentNumber = value.match(/## Assignment (\d+)\.(\d+)/);
                 const assignmentContent = value.split(/\r?\n/);
                 return {
@@ -426,7 +452,46 @@ export class BuuTemplates {
                 };
             });
 
-            return assignmentBlocks;
+            this.maxLineLength = 80;
+
+            // Split lines that exceeds defined max line length
+            this.assignments = this.assignments.map((item) => {
+                const key = Object.keys(item)[0];
+                const value = item[key];
+
+                const updatedValue = value.flatMap((line) => {
+                    if (line.length > this.maxLineLength) {
+                        return this.splitLineAtSpace(line);
+                    }
+
+                    return line;
+                });
+
+                return {
+                    [key]: updatedValue
+                };
+            });
+
+            // Remove empty lines from each assignment description
+            this.assignments = this.assignments.map((item) => {
+                const key = Object.keys(item)[0];
+                const value = item[key];
+            
+                // Find the index of the last non-empty line
+                let lastIndex = value.length - 1;
+                while (lastIndex >= 0 && value[lastIndex].trim() === '') {
+                    lastIndex--;
+                }
+            
+                // Remove empty lines from the end of the assignment block
+                const updatedValue = value.slice(0, lastIndex + 1);
+            
+                return {
+                    [key]: updatedValue
+                };
+            });
+        } else {
+            throw Error(`Error: Assignments could not be found from the file '${this.options.readmePath}'`);
         }
     }
 
