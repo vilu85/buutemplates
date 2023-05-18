@@ -1,4 +1,4 @@
-![Version](https://img.shields.io/badge/version-1.0.1-blue.svg?cacheSeconds=2592000)
+![Version](https://img.shields.io/badge/version-1.1.0-blue.svg?cacheSeconds=2592000)
 ![Node.js](https://github.com/vilu85/buutemplates/actions/workflows/node.js.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](#)
 # BuuTemplates
@@ -120,20 +120,35 @@ buutemplates
 
 3. If a `.buutemplates.json` configuration file is found in the directory, BuuTemplates will use any saved configurations. Otherwise, the tool will ask you a series of questions to set up the configuration.
 
-4. If the configuration is not found, the tool will ask you to specify a base name for the lecture folders and generated TypeScript/JavaScript files.
+## Configuration
+
+The tool uses the file `.buutemplates.json` to store the settings. If the file is not found, the tool will first ask you to select a style that will be used to create lecture folders and assignment files. You can move between different options with the arrow keys, and for each option you will see a short description of the option.
+
+If you wish, you can also define the settings yourself by selecting the option `Custom`.
+
+### Custom configuration
+
+The following settings are asked if 'Custom' is selected as the style:
+
+1. The tool will ask you to specify a base name for the lecture folders and the generated TypeScript/JavaScript files.
    - You can use the `%LECTURE%` and `%ASSIGNMENT%` tokens in the base name to be replaced with the current lecture number and assignment number, respectively.
    - For example, if you specify the base name to be `Assignment_%LECTURE%.%ASSIGNMENT%`, the generated file name for lecture 2 and assignment 3 will be `Assignment_2.3.ts`.
 
-5. The tool will then ask if you want to use padding in numbers. If you choose yes, the generated directory and file names will include leading zeros for lecture and assignment numbers less than 10 (e.g., `Lecture_02`, `Assignment_01`).
+2. The tool will then ask if you want to use padding in numbers. If you choose yes, the generated directory and file names will include leading zeros for lecture and assignment numbers less than 10 (e.g., `Lecture_02`, `Assignment_01`).
 
-6. After providing the lecture folder and file name configuration, the tool will ask you to specify the lecture root folder or the full path of a singular lecture's `README.md` file.
+### Other configuration options
+
+After providing the lecture folder and file name configuration, the tool will ask if you want to cut the automatically generated assignment descriptions from the assignment files if they exceed a certain length. A good length which should always be visible is between *80-160*.
+Recommended default setting is *120*.
+
+The tool will ask you then to specify the lecture root folder or the full path of a singular lecture's `README.md` file.
    - If you provide the path to the root folder, the tool will then ask you for the lecture number.
    - If you provide the path to a singular lecture's `README.md` file, the tool will parse the lecture number from the file name and skip asking for it.
    - Note that singular lecture `README.md` paths are not saved in the configuration, so you will need to provide the path every time you run the tool.
 
-7. After providing the lecture information, the tool will ask you to specify the assignment range by entering the first and last assignment numbers.
+After providing the lecture information, the tool will ask you to specify the assignment range by entering the first and last assignment numbers.
 
-8. Once the configuration is set up, the tool will generate the appropriate lecture directories and assignment files based on the input range and configuration.
+Once the configuration is set up, the tool will generate the appropriate lecture directories and assignment files based on the input range and configuration.
 
 ## Options
 
@@ -154,7 +169,8 @@ buutemplates 1 1 5 path/to/readme.md
 
 If a `.buutemplates.json` configuration file is found in the directory, BuuTemplates will use any saved configurations. Otherwise, it will ask you to set up the configuration before generating the lecture folders and assignment files.
 
-<!-- Note that if you pass command-line arguments, they will override any values saved in the configuration file.
+<!-- IMPORTANT - This functionality is not implemented yet, this is just a draft for upcoming functionality -
+Note that if you pass command-line arguments, they will override any values saved in the configuration file.
 
 For example, the following command will generate lecture folders and assignment files for lecture 3, assignments 1 through 5, and save the configuration with base folder name "lectures" and file name format "Assignment_%LECTURE%.%ASSIGNMENT%":
 
