@@ -118,6 +118,8 @@ describe('BuuTemplates', () => {
         inputMock.mockImplementationOnce(() => Promise.resolve('index'));
         // Mock user input for the question 'Use padding?'
         confirmMock.mockImplementationOnce(() => Promise.resolve(false));
+        // Mock user input for the question 'Use max line length?'
+        confirmMock.mockImplementationOnce(() => Promise.resolve(false));
         // Mock user input for README.md full path
         inputMock.mockImplementationOnce(() => Promise.resolve(readmeMockPath));
         // Mock user input for the question 'Save configuration?'
@@ -136,7 +138,7 @@ describe('BuuTemplates', () => {
         expect(buutemplates.assignmentEnd).toBe(3);
 
         // Expect user inputs be called
-        expect(confirmMock).toHaveBeenCalledTimes(2);
+        expect(confirmMock).toHaveBeenCalledTimes(3);
         expect(inputMock).toHaveBeenCalledTimes(5);
 
         // Expect configuration file be defined
@@ -379,11 +381,11 @@ describe('BuuTemplates', () => {
             fileType: '.ts',
             padNumbers: true,
             folderBasename: 'Lecture',
-            assignmentFileBasename: 'index'
+            assignmentFileBasename: 'index',
         });
 
         // Mock Lecture README.md
-        mockFiles[path.join(projectRoot, 'relative', 'README.md')] = 
+        mockFiles[path.join(projectRoot, 'relative', 'README.md')] =
             '## Assignment 3.1: Test assignment 1\n\n' +
             'Test description 1\n\n' +
             '## Assignment 3.2: Test assignment 2\n\n' +
@@ -405,7 +407,7 @@ describe('BuuTemplates', () => {
 
         // Mock user input for the lecture README.md path
         inputMock.mockImplementationOnce(() => Promise.resolve(path.join(projectRoot, 'relative', 'README.md')));
-        
+
         // Mock user input for the assignment start number
         inputMock.mockImplementationOnce(() => Promise.resolve(4));
         // Mock user input for the assignment end number
@@ -423,25 +425,25 @@ describe('BuuTemplates', () => {
         expect(mockFiles).toEqual(
             expect.objectContaining({
                 [path.join(projectRoot, 'Lecture03', 'Assignment3.04', 'index.ts')]:
-                expect.stringMatching(/Assignment 3\.4/gm)
+                    expect.stringMatching(/Assignment 3\.4/gm),
             })
         );
         expect(mockFiles).toEqual(
             expect.objectContaining({
                 [path.join(projectRoot, 'Lecture03', 'Assignment3.05', 'index.ts')]:
-                expect.stringMatching(/Assignment 3\.5/gm)
+                    expect.stringMatching(/Assignment 3\.5/gm),
             })
         );
         expect(mockFiles).toEqual(
             expect.objectContaining({
                 [path.join(projectRoot, 'Lecture03', 'Assignment3.06', 'index.ts')]:
-                expect.stringMatching(/Assignment 3\.6/gm)
+                    expect.stringMatching(/Assignment 3\.6/gm),
             })
         );
         expect(mockFiles).toEqual(
             expect.objectContaining({
                 [path.join(projectRoot, 'Lecture03', 'Assignment3.07', 'index.ts')]:
-                    expect.stringMatching(/Assignment 3\.7/gm)
+                    expect.stringMatching(/Assignment 3\.7/gm),
             })
         );
     });
@@ -454,11 +456,11 @@ describe('BuuTemplates', () => {
             fileType: '.ts',
             padNumbers: false,
             folderBasename: 'Lecture',
-            assignmentFileBasename: 'index'
+            assignmentFileBasename: 'index',
         });
 
         // Mock Lecture README.md
-        mockFiles[path.join(projectRoot, 'test6', 'README.md')] = 
+        mockFiles[path.join(projectRoot, 'test6', 'README.md')] =
             '## Assignment 4.1: Test assignment 1\n\n' +
             'Test description 1\n\n\n\n\n\n' +
             '## Assignment 4.2: Test assignment 2\n\n' +
@@ -472,7 +474,7 @@ describe('BuuTemplates', () => {
 
         // Mock user input for the lecture README.md path
         inputMock.mockImplementationOnce(() => Promise.resolve(path.join(projectRoot, 'test6', 'README.md')));
-        
+
         // Mock user input for the assignment start number
         inputMock.mockImplementationOnce(() => Promise.resolve(1));
         // Mock user input for the assignment end number
@@ -486,24 +488,23 @@ describe('BuuTemplates', () => {
         expect(buutemplates.assignmentStart).toBe(1);
         expect(buutemplates.assignmentEnd).toBe(3);
 
-        // TODO: Expect line breaks to be removed
-        // Expect index.ts files be generated for assignments 4.1-4.3 and extra linebreaks be removed.
+        // Expect that the empty lines have been removed from the end
         expect(mockFiles).toEqual(
             expect.objectContaining({
                 [path.join(projectRoot, 'Lecture4', 'Assignment4.1', 'index.ts')]:
-                expect.stringMatching(/Assignment 3\.4/gm)
+                    '/**\n * ## Assignment 4.1: Test assignment 1\n * \n * Test description 1\n */\n',
             })
         );
         expect(mockFiles).toEqual(
             expect.objectContaining({
                 [path.join(projectRoot, 'Lecture4', 'Assignment4.2', 'index.ts')]:
-                expect.stringMatching(/Assignment 3\.5/gm)
+                    '/**\n * ## Assignment 4.2: Test assignment 2\n * \n * Test description 2\n */\n',
             })
         );
         expect(mockFiles).toEqual(
             expect.objectContaining({
                 [path.join(projectRoot, 'Lecture4', 'Assignment4.3', 'index.ts')]:
-                expect.stringMatching(/Assignment 3\.6/gm)
+                    '/**\n * ## Assignment 4.3: Test assignment 3\n * \n * Test description\n */\n',
             })
         );
     });
@@ -511,39 +512,48 @@ describe('BuuTemplates', () => {
     it('should split lines that exceeds over 80 chars', async () => {
         // Mock .buutemplates.json configuration
         const projectRoot = process.cwd();
-        const configFile = path.join(projectRoot, '.buutemplates.json');
-        mockFiles[configFile] = JSON.stringify({
-            fileType: '.ts',
-            padNumbers: false,
-            folderBasename: 'Lecture',
-            assignmentFileBasename: 'index'
-        });
 
         // Mock Lecture README.md
-        mockFiles[path.join(projectRoot, 'test7', 'README.md')] = '## Assignment 4.1: Test assignment 1\n\n' +
-        'Test description 1\n\n' +
-        'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,\n' +
-        'quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.\n' +
-        'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\n' +
-        'Something\n\n\n' +
-        '## Assignment 4.2: Test assignment 2\n\n' +
-        'Test description 2\n\n' +
-        'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,\n' +
-        'quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.\n' +
-        'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\n\n\n' +
-        '## Assignment 4.3: Test assignment 3\n\n' +
-        'Test description\n\n' +
-        'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,\n' +
-        'quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.\n' +
-        'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\n\n\n\n';
+        mockFiles[path.join(projectRoot, 'test7', 'README.md')] =
+            '## Assignment 4.1: Test assignment 1\n\n' +
+            'Test description 1\n\n' +
+            'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,\n' +
+            'quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.\n' +
+            'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\n' +
+            'Something\n\n\n' +
+            '## Assignment 4.2: Test assignment 2\n\n' +
+            'Test description 2\n\n' +
+            'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,\n' +
+            'quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.\n' +
+            'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\n\n\n' +
+            '## Assignment 4.3: Test assignment 3\n\n' +
+            'Test description\n\n' +
+            'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,\n' +
+            'quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.\n' +
+            'Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n\n\n\n\n';
 
         // Mock inquirer functions
         const inputMock = jest.fn();
+        const confirmMock = jest.fn();
         inquirer.input = inputMock;
+        inquirer.confirm = confirmMock;
+
+        // Mock user input for lecture folder base name
+        inputMock.mockImplementationOnce(() => Promise.resolve('Lecture'));
+        // Mock user input for assignment file base name
+        inputMock.mockImplementationOnce(() => Promise.resolve('index'));
+        // Mock user input for the question 'Use padding?'
+        confirmMock.mockImplementationOnce(() => Promise.resolve(false));
+        // Mock user input for the question 'Use max line length?'
+        confirmMock.mockImplementationOnce(() => Promise.resolve(true));
+        // Mock user input for the question 'Set maximum length'
+        inputMock.mockImplementationOnce(() => Promise.resolve('80'));
+        // Mock user input for the question 'Save configuration?'
+        confirmMock.mockImplementationOnce(() => Promise.resolve(true));
 
         // Mock user input for the lecture README.md path
         inputMock.mockImplementationOnce(() => Promise.resolve(path.join(projectRoot, 'test7', 'README.md')));
-        
+
         // Mock user input for the assignment start number
         inputMock.mockImplementationOnce(() => Promise.resolve(1));
         // Mock user input for the assignment end number
@@ -556,26 +566,18 @@ describe('BuuTemplates', () => {
         // Expect assignment start and end inputs be set
         expect(buutemplates.assignmentStart).toBe(1);
         expect(buutemplates.assignmentEnd).toBe(3);
+        // Expect maxLineLength be 80
+        expect(buutemplates.options.maxLineLength).toBe(80);
 
-        //TODO: Expect line length to be <= 80 chars
-        // Expect index.ts files be generated for assignments 4.1-4.3 and extra linebreaks be removed.
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture4', 'Assignment4.1', 'index.ts')]:
-                expect.stringMatching(/Assignment 3\.4/gm)
-            })
-        );
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture4', 'Assignment4.2', 'index.ts')]:
-                expect.stringMatching(/Assignment 3\.5/gm)
-            })
-        );
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture4', 'Assignment4.3', 'index.ts')]:
-                expect.stringMatching(/Assignment 3\.6/gm)
-            })
-        );
+        // Expect each line length be 80 chars or less
+        mockFiles[path.join(projectRoot, 'Lecture4', 'Assignment4.1', 'index.ts')].split('\n').forEach((line) => {
+            expect(line.length).toBeLessThanOrEqual(80);
+        });
+        mockFiles[path.join(projectRoot, 'Lecture4', 'Assignment4.2', 'index.ts')].split('\n').forEach((line) => {
+            expect(line.length).toBeLessThanOrEqual(80);
+        });
+        mockFiles[path.join(projectRoot, 'Lecture4', 'Assignment4.3', 'index.ts')].split('\n').forEach((line) => {
+            expect(line.length).toBeLessThanOrEqual(80);
+        });
     });
 });
