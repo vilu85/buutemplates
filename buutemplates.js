@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import colors from 'colors';
-import { input, confirm, } from '@inquirer/prompts';
+import { input, confirm } from '@inquirer/prompts';
 import { generateFolderRange } from 'buufolders/buuf.js';
 
 /**
@@ -36,6 +36,7 @@ const [_, __, lecture, assignmentStart, assignmentEnd, readmePath] = process.arg
  * @typedef {Object} BuuTemplateOptions
  * @property {string} readmePath
  * @property {string} lectureRootPath
+ * @property {number?} maxLineLength sets maximum line length for assignment description blocks if it's set.
  */
 
 export class BuuTemplates {
@@ -46,7 +47,7 @@ export class BuuTemplates {
         fileType: '.ts',
         padNumbers: false,
         folderBasename: 'Lecture',
-        assignmentFileBasename: 'index'
+        assignmentFileBasename: 'index',
     };
 
     /**
@@ -66,9 +67,6 @@ export class BuuTemplates {
     lectureNumber = 0;
     assignmentStart = 0;
     assignmentEnd = 0;
-
-    
-
 
     constructor() {
         const projectRoot = process.cwd();
@@ -141,7 +139,7 @@ export class BuuTemplates {
                     }
                 },
             });
-            
+
             this.options.assignmentFileBasename = await input({
                 message: 'Enter base name for assignment files:',
                 default: this.options.assignmentFileBasename,
@@ -156,8 +154,34 @@ export class BuuTemplates {
 
             this.options.padNumbers = await confirm({
                 message: 'Do you want to use padding in numbers?',
-                default: this.options.padNumbers,
+                default: this.options.padNumbers ?? false,
             });
+
+            if (
+                await confirm({
+                    message:
+                        'To make the task description easier to read, do you want to set a maximum length for comment lines (too long lines are automatically cut to a new line)?',
+                    default: true,
+                })
+            ) {
+                this.options.maxLineLength = Number(
+                    await input({
+                        message: 'Enter the maximum length for each line:',
+                        default: 120,
+                        validate: (value) => {
+                            if (isNaN(value)) {
+                                return 'Invalid number';
+                            } else if (Number(value) < 40) {
+                                return 'Maximum length cannot be less than 40 characters';
+                            } else if (Number(value) > 400) {
+                                return 'Maximum length cannot be more than 400 characters';
+                            }
+
+                            return true;
+                        },
+                    })
+                );
+            }
 
             this.configurationExists = true;
             this.askConfigurationSave = true;
@@ -206,7 +230,7 @@ export class BuuTemplates {
                         }
                     },
                 }));
-                
+
             this.options.readmePath = path.join(
                 this.options.lectureRootPath,
                 `Lecture${this.lectureNumber}`,
@@ -218,7 +242,7 @@ export class BuuTemplates {
         } else if (this.options.readmePath && this.lectureNumber === 0) {
             this.readme = await this.getReadmeContent();
             this.parseReadme(this.readme);
-            
+
             if (this.parsedLectureNumber) {
                 this.lectureNumber = this.parsedLectureNumber;
                 console.log(`Lecture ${colors.yellow(this.lectureNumber)} found from README.md`);
@@ -307,7 +331,9 @@ export class BuuTemplates {
      */
     getAssignmentFilePath(lectureNumber, assignmentNumber, options) {
         const projectRoot = process.cwd();
-        const formattedLectureNumber = options.padNumbers ? String(lectureNumber).padStart(2, '0') : String(lectureNumber);
+        const formattedLectureNumber = options.padNumbers
+            ? String(lectureNumber).padStart(2, '0')
+            : String(lectureNumber);
 
         const lectureFolder = `${options.folderBasename}${formattedLectureNumber}`;
         const lectureFolderFullPath = path.join(projectRoot, lectureFolder);
@@ -407,14 +433,14 @@ export class BuuTemplates {
         });
     }
 
-    splitLineAtSpace(line) {
-        const lastSpaceIndex = line.lastIndexOf(' ', this.maxLineLength);
+    splitLineAtSpace(line, maxLength) {
+        const lastSpaceIndex = line.lastIndexOf(' ', maxLength);
 
         if (lastSpaceIndex !== -1) {
             const segment1 = line.substring(0, lastSpaceIndex).trim();
             const segment2 = line.substring(lastSpaceIndex + 1).trim();
 
-            return [segment1, ...this.splitLineAtSpace(segment2)];
+            return [segment1, ...this.splitLineAtSpace(segment2, maxLength)];
         }
 
         return [line];
@@ -429,12 +455,12 @@ export class BuuTemplates {
      *  [assignmentIdentifier: string]: string[];
      * }[]}
      */
-    parseReadme(content) {        
+    parseReadme(content) {
         const parsedLecture = content.match(/## Assignment (\d+)\.(\d+)/);
-        if(parsedLecture && parsedLecture.length) {
+        if (parsedLecture && parsedLecture.length) {
             this.parsedLectureNumber = Number(parsedLecture[1]);
         }
-        
+
         const regex = /(?=## Assignment \d+\.\d+:)/;
         const blocks = content.split(regex).map((block) => {
             return block;
@@ -452,42 +478,44 @@ export class BuuTemplates {
                 };
             });
 
-            this.maxLineLength = 80;
+            // Check if maxLineLength option is set
+            if (this?.options?.maxLineLength) {
+                // Split lines that exceeds defined max line length
+                this.assignments = this.assignments.map((item) => {
+                    const key = Object.keys(item)[0];
+                    const value = item[key];
 
-            // Split lines that exceeds defined max line length
-            this.assignments = this.assignments.map((item) => {
-                const key = Object.keys(item)[0];
-                const value = item[key];
+                    const updatedValue = value.flatMap((line) => {
+                        // Check if the line length is greater than maxLineLength - comment prefix length (3)
+                        if (line.length > this.options.maxLineLength - 3) {
+                            return this.splitLineAtSpace(line, this.options.maxLineLength - 3);
+                        }
 
-                const updatedValue = value.flatMap((line) => {
-                    if (line.length > this.maxLineLength) {
-                        return this.splitLineAtSpace(line);
-                    }
+                        return line;
+                    });
 
-                    return line;
+                    return {
+                        [key]: updatedValue,
+                    };
                 });
-
-                return {
-                    [key]: updatedValue
-                };
-            });
+            }
 
             // Remove empty lines from each assignment description
             this.assignments = this.assignments.map((item) => {
                 const key = Object.keys(item)[0];
                 const value = item[key];
-            
+
                 // Find the index of the last non-empty line
                 let lastIndex = value.length - 1;
                 while (lastIndex >= 0 && value[lastIndex].trim() === '') {
                     lastIndex--;
                 }
-            
+
                 // Remove empty lines from the end of the assignment block
                 const updatedValue = value.slice(0, lastIndex + 1);
-            
+
                 return {
-                    [key]: updatedValue
+                    [key]: updatedValue,
                 };
             });
         } else {
