@@ -15,7 +15,10 @@
   - [From npm](#option-1-download-from-npm)
   - [From repository](#option-2-clone-the-repository)
 - [Usage](#usage)
-  - [Options](#options)
+- [Configuration](#configuration)
+  - [Custom configuration](#custom-configuration)
+  - [Other configuration options](#other-configuration-options)
+- [Running with command-line arguments](#running-with-command-line-arguments)
 - [Running the tests](#running-the-tests)
   - [Issues](#issues)
   - [Contributing](#contributing)
@@ -150,7 +153,9 @@ After providing the lecture information, the tool will ask you to specify the as
 
 Once the configuration is set up, the tool will generate the appropriate lecture directories and assignment files based on the input range and configuration.
 
-## Options
+## Running with command-line arguments
+
+## Experimental ##
 
 In addition to the interactive mode, BuuTemplates also supports passing command-line arguments to generate lecture folders and assignment files without having to answer any questions.
 
