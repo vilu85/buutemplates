@@ -1,4 +1,4 @@
-![Version](https://img.shields.io/badge/version-1.1.0-blue.svg?cacheSeconds=2592000)
+![Version](https://img.shields.io/badge/version-1.1.1-blue.svg?cacheSeconds=2592000)
 ![Node.js](https://github.com/vilu85/buutemplates/actions/workflows/node.js.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](#)
 # BuuTemplates
@@ -32,7 +32,11 @@ The BuuTemplates is a command-line tool that automates the process of creating i
 
 To use this tool, you need to have a Buutti lecture folders with the appropriate structure, including a folder for each lecture and a README.md file in each lecture folder. The README.md file should contain a description of each assignment for that lecture.
 
-To create the main entry files and assignment description blocks, run the command `npm run buutemplates` and follow the prompts. The tool will prompt you to enter the full path of a singular lecture's README.md file or the root path of the folder for all lectures.
+To create the main entry files and assignment description blocks, install the tool, run the command `npx buutemplates` and follow the prompts.
+
+![BuuTemplates In Action](https://github.com/vilu85/buutemplates/blob/master/assets/Code_mAjGUHUY9V.gif)
+
+The tool will prompt you to enter the full path of a singular lecture's README.md file or the root path of the folder for all lectures.
 
 If a singular lecture's README.md path is given, the tool will use it and generate assignments only for that lecture.
 
@@ -211,11 +215,11 @@ It is important to make sure all tests pass before contributing to the project o
 
 Issues and feature requests are welcome!
 
-Feel free to check [issues page](https://github.com/vilu85/buutemplates/issues). You can also take a look at the [contributing guide](https://github.com/vilu85/buutemplates/blob/main/CONTRIBUTING.md).
+Feel free to check [issues page](https://github.com/vilu85/buutemplates/issues). You can also take a look at the [contributing guide](https://github.com/vilu85/buutemplates/blob/master/CONTRIBUTING.md).
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](https://github.com/vilu85/buutemplates/blob/main/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+Please read [CONTRIBUTING.md](https://github.com/vilu85/buutemplates/blob/master/CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
 
 1.  Fork it!
 2.  Create your feature branch: `git checkout -b my-new-feature`
