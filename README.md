@@ -1,4 +1,4 @@
-![Version](https://img.shields.io/badge/version-1.1.1-blue.svg?cacheSeconds=2592000)
+![Version](https://img.shields.io/badge/version-1.1.0-blue.svg?cacheSeconds=2592000)
 ![Node.js](https://github.com/vilu85/buutemplates/actions/workflows/node.js.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](#)
 # BuuTemplates
