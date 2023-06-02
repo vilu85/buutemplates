@@ -117,13 +117,61 @@ describe('BuuTemplates', () => {
         consoleLogMock.mockRestore();
     });
 
-    it('should create .buutemplates.json configuration file', async () => {
+    it('should create configuration file with predefined style', async () => {
         // Mock inquirer functions
         const inputMock = jest.fn();
         const confirmMock = jest.fn();
+        const selectMock = jest.fn();
         inquirer.input = inputMock;
         inquirer.confirm = confirmMock;
+        inquirer.select = selectMock;
 
+        // Mock user selection for directory and file structure style
+        selectMock.mockImplementationOnce(() => Promise.resolve('assignmentWithoutPadding'));
+        // Mock user input for the question 'Use max line length?'
+        confirmMock.mockImplementationOnce(() => Promise.resolve(false));
+        // Mock user input for README.md full path
+        inputMock.mockImplementationOnce(() => Promise.resolve(readmeMockPath));
+        // Mock user input for the question 'Save configuration?'
+        confirmMock.mockImplementationOnce(() => Promise.resolve(true));
+        // Mock user input for assignment start number
+        inputMock.mockImplementationOnce(() => Promise.resolve(1));
+        // Mock user input for assignment end number
+        inputMock.mockImplementationOnce(() => Promise.resolve(3));
+
+        const buutemplates = new BuuTemplates();
+        await buutemplates.setup();
+
+        // Expect the class run time variables be set
+        expect(buutemplates.options.readmePath).toBe(readmeMockPath);
+        expect(buutemplates.assignmentStart).toBe(1);
+        expect(buutemplates.assignmentEnd).toBe(3);
+
+        // Expect user inputs be called
+        expect(selectMock).toHaveBeenCalledTimes(1);
+        expect(confirmMock).toHaveBeenCalledTimes(2);
+        expect(inputMock).toHaveBeenCalledTimes(3);
+
+        // Expect configuration file be defined
+        expect(mockFiles[configFilePath]).toBeDefined();
+ 
+        // Expect configuration to match with selected style
+        expect(buutemplates.options).toEqual(
+            expect.objectContaining(buutemplates.structureStyles.find( value => value.value === 'assignmentWithoutPadding').options)
+        );
+    });
+
+    it('should create configuration file with user defined style', async () => {
+        // Mock inquirer functions
+        const inputMock = jest.fn();
+        const confirmMock = jest.fn();
+        const selectMock = jest.fn();
+        inquirer.input = inputMock;
+        inquirer.confirm = confirmMock;
+        inquirer.select = selectMock;
+
+        // Mock user selection for directory and file structure style
+        selectMock.mockImplementationOnce(() => Promise.resolve('custom'));
         // Mock user input for lecture folder base name
         inputMock.mockImplementationOnce(() => Promise.resolve('Lecture'));
         // Mock user input for assignment file base name
@@ -567,9 +615,13 @@ describe('BuuTemplates', () => {
         // Mock inquirer functions
         const inputMock = jest.fn();
         const confirmMock = jest.fn();
+        const selectMock = jest.fn();
         inquirer.input = inputMock;
         inquirer.confirm = confirmMock;
+        inquirer.select = selectMock;
 
+        // Mock user selection for directory and file structure style
+        selectMock.mockImplementationOnce(() => Promise.resolve('custom'));
         // Mock user input for lecture folder base name
         inputMock.mockImplementationOnce(() => Promise.resolve('Lecture'));
         // Mock user input for assignment file base name

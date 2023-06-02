@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import colors from 'colors';
-import { input, confirm } from '@inquirer/prompts';
+import { input, confirm, select } from '@inquirer/prompts';
 import { generateFolderRange } from 'buufolders/buuf.js';
 
 /**
@@ -82,6 +82,66 @@ export class BuuTemplates {
      */
     readmeMappings = [];
 
+    /**
+     * Lecture and assignment file structure style options
+     * @type {{
+     *  name: string,
+     *  value: string,
+     *  description: string,
+     *  options: BuuFoldersOptions
+     * }[]}
+     */
+    structureStyles = [
+        {
+            name: '\\Buutti\\Lecture_1\\Assignment1.1\\Assignment_1.01.ts',
+            value: 'assignmentUnderscorePadding',
+            description: 'Use padding in numbers and separate name and number with underscore',
+            options: {
+                padNumbers: true,
+                folderBasename: 'Lecture_',
+                assignmentFileBasename: 'Assignment_%LECTURE%.%ASSIGNMENT%',
+            },
+        },
+        {
+            name: '\\Buutti\\Lecture1\\Assignment1.1\\Assignment1.1.ts',
+            value: 'assignmentWithoutPadding',
+            description: 'Names and numbers next to each other without padding',
+            options: {
+                padNumbers: false,
+                folderBasename: 'Lecture',
+                assignmentFileBasename: 'Assignment%LECTURE%.%ASSIGNMENT%',
+            },
+        },
+        {
+            name: '\\Buutti\\Lecture1\\Assignment1.1\\assignment.ts',
+            description: 'Names and numbers next to each other, assignment filename is always assignment.ts',
+            value: 'assignmentWithoutNumber',
+            options: {
+                padNumbers: false,
+                folderBasename: 'Lecture',
+                assignmentFileBasename: 'assignment',
+            },
+        },
+        {
+            name: '\\Buutti\\Lecture1\\Assignment1.1\\index.ts',
+            description: 'Names and numbers next to each other, assignment filename is always index.ts',
+            value: 'index',
+            options: {
+                padNumbers: false,
+                folderBasename: 'Lecture',
+                assignmentFileBasename: 'index',
+            },
+        },
+        {
+            name: 'Custom',
+            description: "Let's you customize names for Lecture folder, assignment files and padding",
+            value: 'custom',
+            options: {
+                ...this.options,
+            },
+        },
+    ];
+
     constructor() {
         const projectRoot = process.cwd();
         this.configFile = path.join(projectRoot, '.buutemplates.json');
@@ -143,34 +203,44 @@ export class BuuTemplates {
 
     async setup() {
         if (!this.configurationExists) {
-            this.options.folderBasename = await input({
-                message: 'Enter base name for lecture folders:',
-                default: this.options.folderBasename,
-                validate: (value) => {
-                    if (this.isValidName(value)) {
-                        return true;
-                    } else {
-                        return 'Invalid lecture folder base name.';
-                    }
-                },
+            const style = await select({
+                message: 'Choose a style for directory and filename structure',
+                choices: this.structureStyles,
             });
 
-            this.options.assignmentFileBasename = await input({
-                message: 'Enter base name for assignment files:',
-                default: this.options.assignmentFileBasename,
-                validate: (value) => {
-                    if (this.isValidName(value)) {
-                        return true;
-                    } else {
-                        return 'Invalid assignment file base name.';
-                    }
-                },
-            });
+            if (style !== 'custom') {
+                const styleOptions = this.structureStyles.find((value) => value.value === style).options;
+                this.options = { ...this.options, ...styleOptions };
+            } else {
+                this.options.folderBasename = await input({
+                    message: 'Enter base name for lecture folders:',
+                    default: this.options.folderBasename,
+                    validate: (value) => {
+                        if (this.isValidName(value)) {
+                            return true;
+                        } else {
+                            return 'Invalid lecture folder base name.';
+                        }
+                    },
+                });
 
-            this.options.padNumbers = await confirm({
-                message: 'Do you want to use padding in numbers?',
-                default: this.options.padNumbers ?? false,
-            });
+                this.options.assignmentFileBasename = await input({
+                    message: 'Enter base name for assignment files:',
+                    default: this.options.assignmentFileBasename,
+                    validate: (value) => {
+                        if (this.isValidName(value)) {
+                            return true;
+                        } else {
+                            return 'Invalid assignment file base name.';
+                        }
+                    },
+                });
+
+                this.options.padNumbers = await confirm({
+                    message: 'Do you want to use padding in numbers?',
+                    default: this.options.padNumbers ?? false,
+                });
+            }
 
             if (
                 await confirm({
