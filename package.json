@@ -1,6 +1,6 @@
 {
   "name": "buutemplates",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "Generates templates for Buutti assignments",
   "main": "index.js",
   "type": "module",
@@ -32,8 +32,7 @@
   "dependencies": {
     "@inquirer/prompts": "^1.0.3",
     "buufolders": "^1.0.7",
-    "colors": "^1.4.0",
-    "fs": "^0.0.1-security"
+    "colors": "^1.4.0"
   },
   "devDependencies": {
     "@babel/core": "^7.21.8",
