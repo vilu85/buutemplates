@@ -130,6 +130,8 @@ describe('BuuTemplates', () => {
         selectMock.mockImplementationOnce(() => Promise.resolve('assignmentWithoutPadding'));
         // Mock user input for the question 'Use max line length?'
         confirmMock.mockImplementationOnce(() => Promise.resolve(false));
+        // Mock user input for the question 'Generate README?'
+        confirmMock.mockImplementationOnce(() => Promise.resolve(false));
         // Mock user input for README.md full path
         inputMock.mockImplementationOnce(() => Promise.resolve(readmeMockPath));
         // Mock user input for the question 'Save configuration?'
@@ -149,7 +151,7 @@ describe('BuuTemplates', () => {
 
         // Expect user inputs be called
         expect(selectMock).toHaveBeenCalledTimes(1);
-        expect(confirmMock).toHaveBeenCalledTimes(2);
+        expect(confirmMock).toHaveBeenCalledTimes(3);
         expect(inputMock).toHaveBeenCalledTimes(3);
 
         // Expect configuration file be defined

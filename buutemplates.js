@@ -487,6 +487,7 @@ export class BuuTemplates {
             );
 
             if (this.options.generateReadmeFiles) {
+                console.log(`Generating ${this.assignmentEnd - this.assignmentStart + 1} README.md files...`);
                 this.generateReadmeFiles(this.readmeMappings, this.assignments);
             }
         } else {
@@ -508,7 +509,12 @@ export class BuuTemplates {
 
             if (readmeContent) {
                 const readmeContentStr = readmeContent[assignmentNumber].join('\n');
-                await this.writeFile(path.join(Object.values(readmeEntry)[0], 'README.md'), readmeContentStr, false);
+                const assignmentReadmePath = path.join(Object.values(readmeEntry)[0], 'README.md');
+                if(!this.fileExists(assignmentReadmePath)) {
+                    await this.writeFile(assignmentReadmePath, readmeContentStr, false);
+                } else {
+                    console.log(`README.md in '${colors.yellow(assignmentReadmePath)}' already exists, skipping it.`);
+                }
             }
         });
     }
