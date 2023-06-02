@@ -37,6 +37,7 @@ const [_, __, lecture, assignmentStart, assignmentEnd, readmePath] = process.arg
  * @property {string} readmePath
  * @property {string} lectureRootPath
  * @property {number?} maxLineLength sets maximum line length for assignment description blocks if it's set.
+ * @property {boolean} generateReadmeFiles
  */
 
 export class BuuTemplates {
@@ -48,6 +49,7 @@ export class BuuTemplates {
         padNumbers: false,
         folderBasename: 'Lecture',
         assignmentFileBasename: 'index',
+        generateReadmeFiles: true,
     };
 
     /**
@@ -58,7 +60,13 @@ export class BuuTemplates {
     askConfigurationSave = false;
 
     /**
-     * Readme filtered assignment text blocks
+     * Assignment comment blocks for assignment files
+     *
+     * @type {{[assignmentIdentifier: string]: string[]}[]}
+     */
+    assignmentCommentBlocks = null;
+    /**
+     * Assignment text blocks for assignment README files
      *
      * @type {{[assignmentIdentifier: string]: string[]}[]}
      */
@@ -68,17 +76,24 @@ export class BuuTemplates {
     assignmentStart = 0;
     assignmentEnd = 0;
 
+    /**
+     * Readme file mappings for assignments
+     * @type {{[assignmentNumber: string]: string}[]} An array of key value pairs `assignment number` => `assignment folder path`.
+     */
+    readmeMappings = [];
+
     constructor() {
         const projectRoot = process.cwd();
         this.configFile = path.join(projectRoot, '.buutemplates.json');
 
         if (this.fileExists(this.configFile)) {
             const json = this.readJsonFile(this.configFile);
+            this.configurationExists = !this.areOptionsMissing(json, this.options);
+
             this.options = {
                 ...this.options,
                 ...json,
             };
-            this.configurationExists = true;
         }
 
         // Check if readmePath was given in args.
@@ -183,6 +198,11 @@ export class BuuTemplates {
                 );
             }
 
+            this.options.generateReadmeFiles = await confirm({
+                message: 'Do you also want to generate README.md for the each assignment?',
+                default: this.options.generateReadmeFiles ?? true,
+            });
+
             this.configurationExists = true;
             this.askConfigurationSave = true;
         }
@@ -204,7 +224,7 @@ export class BuuTemplates {
             if (savePath) {
                 // eslint-disable-next-line no-unused-vars
                 const { readmePath, ...saveableOptions } = this.options;
-                await this.writeJsonFile(this.configFile, saveableOptions);
+                await this.writeFile(this.configFile, saveableOptions, true);
             }
         }
 
@@ -285,15 +305,16 @@ export class BuuTemplates {
     }
 
     /**
-     * Writes json object to the file.
+     * Writes text or json object to the file.
      *
      * @param {string} path
      * @param {Object} fileData
-     * @returns {boolean}
+     * @param {boolean} json
+     * @returns {Promise<void>}
      */
-    writeJsonFile(path, fileData) {
+    writeFile(path, fileData, json) {
         return new Promise((resolve, reject) => {
-            fs.writeFile(path, JSON.stringify(fileData, null, 2), function (err) {
+            fs.writeFile(path, json ? JSON.stringify(fileData, null, 2) : fileData, function (err) {
                 if (err) reject(err);
                 resolve();
             });
@@ -316,7 +337,7 @@ export class BuuTemplates {
     }
 
     getAssignmentEntry(num) {
-        return this.assignments.find((value) => {
+        return this.assignmentCommentBlocks.find((value) => {
             return Object.keys(value)[0] === String(num);
         });
     }
@@ -369,26 +390,35 @@ export class BuuTemplates {
 
     /**
      * Provides assignment descriptions during index.ts generation
+     * and handles README file mapping.
      * @param {number} _lectureNumber
      * @param {number} assignmentNumber
+     * @param {string} folderPath
      */
-    fileContentProvider(_lectureNumber, assignmentNumber) {
+    fileContentProvider(_lectureNumber, assignmentNumber, folderPath) {
         const _assignmentNumber = '' + assignmentNumber;
         const assignmentEntry = this.getAssignmentEntry(assignmentNumber);
         const data = this.generateIndexTs(_assignmentNumber, assignmentEntry);
+        if (data) {
+            this.readmeMappings.push({ [String(assignmentNumber)]: folderPath });
+        }
         return data;
     }
 
     async generateTemplates() {
-        if (this.assignments && this.assignments.length) {
+        if (this.assignmentCommentBlocks && this.assignmentCommentBlocks.length) {
             console.log(`Generating ${this.assignmentEnd - this.assignmentStart + 1} index.ts files...`);
             generateFolderRange(
                 Number(this.lectureNumber),
                 Number(this.assignmentStart),
                 Number(this.assignmentEnd),
                 this.options,
-                (num, assignNum) => this.fileContentProvider(num, assignNum)
+                (num, assignNum, folderPath) => this.fileContentProvider(num, assignNum, folderPath)
             );
+
+            if (this.options.generateReadmeFiles) {
+                this.generateReadmeFiles(this.readmeMappings, this.assignments);
+            }
         } else {
             throw Error(
                 `Error: There is no assignments in given range (${this.assignmentStart}-${this.assignmentEnd})`
@@ -397,10 +427,29 @@ export class BuuTemplates {
     }
 
     /**
+     * Generates README.md files for assignments
+     * @param {{[assignmentNumber: string]: string}[]} readmeMappings
+     * @param {{[assignmentIdentifier: string]: string[]}[]} assignments
+     */
+    generateReadmeFiles(readmeMappings, assignments) {
+        readmeMappings.forEach(async (readmeEntry) => {
+            const assignmentNumber = Object.keys(readmeEntry)[0];
+            const readmeContent = assignments.find((value) => Object.keys(value)[0] === assignmentNumber);
+
+            if (readmeContent) {
+                const readmeContentStr = readmeContent[assignmentNumber].join('\n');
+                await this.writeFile(path.join(Object.values(readmeEntry)[0], 'README.md'), readmeContentStr, false);
+            }
+        });
+    }
+
+    /**
      * Generates index.ts file with the comment from assignment.
      *
      * @param {string} assignmentNumberSuffix
      * @param {{[assignmentIdentifier: string]: string[]}} assignmentEntry
+     * @returns {string}
+     * @throws {Error}
      */
     generateIndexTs(assignmentNumberSuffix, assignmentEntry) {
         if (assignmentEntry?.[assignmentNumberSuffix]) {
@@ -470,18 +519,21 @@ export class BuuTemplates {
         const filteredBlocks = blocks.filter((value) => value.match(/(?=## Assignment \d+\.\d+:)/));
         if (filteredBlocks) {
             // Map filtered blocks to the array in form: assignment number => assignment description
-            this.assignments = filteredBlocks.map((value) => {
+            this.assignmentCommentBlocks = filteredBlocks.map((value) => {
                 const assignmentNumber = value.match(/## Assignment (\d+)\.(\d+)/);
                 const assignmentContent = value.split(/\r?\n/);
                 return {
                     [`${assignmentNumber[2]}`]: assignmentContent,
                 };
             });
+            
+            // Copy assignments to assignmentCommentBlocks which will be formated to actual comment blocks.
+            this.assignments = Object.assign([], this.assignmentCommentBlocks);
 
             // Check if maxLineLength option is set
             if (this?.options?.maxLineLength) {
                 // Split lines that exceeds defined max line length
-                this.assignments = this.assignments.map((item) => {
+                this.assignmentCommentBlocks = this.assignmentCommentBlocks.map((item) => {
                     const key = Object.keys(item)[0];
                     const value = item[key];
 
@@ -501,7 +553,7 @@ export class BuuTemplates {
             }
 
             // Remove empty lines from each assignment description
-            this.assignments = this.assignments.map((item) => {
+            this.assignmentCommentBlocks = this.assignmentCommentBlocks.map((item) => {
                 const key = Object.keys(item)[0];
                 const value = item[key];
 
@@ -534,5 +586,18 @@ export class BuuTemplates {
                 resolve(data.toString());
             });
         });
+    }
+
+    /**
+     * Compares options and checks that all options exist.
+     * @param {BuuTemplateOptions & BuuFoldersOptions} savedOptions saved options
+     * @param {BuuTemplateOptions & BuuFoldersOptions} allOptions all options
+     * @returns {boolean}
+     */
+    areOptionsMissing(savedOptions, allOptions) {
+        const savedKeys = Object.keys(savedOptions);
+        const allKeys = Object.keys(allOptions);
+
+        return allKeys.some((key) => !savedKeys.includes(key));
     }
 }

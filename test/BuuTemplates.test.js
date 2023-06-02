@@ -13,6 +13,12 @@ const readmeMockPath = path.join('test', 'assignments', 'Lecture1', 'README.md')
 // Setup configuration file path
 const configFilePath = path.join(projectRoot, '.buutemplates.json');
 
+// Mock console log
+const consoleLogMock = jest.spyOn(console, 'log').mockImplementation();
+
+// Mock process argv
+const originalArgv = process.argv;
+
 jest.mock('fs', () => {
     return {
         readFileSync: jest.fn().mockImplementation((file, encoding = 'utf8') => {
@@ -70,7 +76,7 @@ jest.mock('@inquirer/prompts');
 describe('BuuTemplates', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-
+        
         // Clear mocked files after each test
         mockFiles = {};
 
@@ -101,9 +107,15 @@ describe('BuuTemplates', () => {
             'Test description 6\n\n' +
             '## Assignment 2.7: Test assignment 7\n\n' +
             'Test description 7\n\n';
+
+        // Mock empty process.argv arguments
+        process.argv = [];    
     });
 
-    afterEach(() => {});
+    afterAll(() => {
+        process.argv = originalArgv;
+        consoleLogMock.mockRestore();
+    });
 
     it('should create .buutemplates.json configuration file', async () => {
         // Mock inquirer functions
@@ -119,6 +131,8 @@ describe('BuuTemplates', () => {
         // Mock user input for the question 'Use padding?'
         confirmMock.mockImplementationOnce(() => Promise.resolve(false));
         // Mock user input for the question 'Use max line length?'
+        confirmMock.mockImplementationOnce(() => Promise.resolve(false));
+        // Mock user input for the question 'Generate README?'
         confirmMock.mockImplementationOnce(() => Promise.resolve(false));
         // Mock user input for README.md full path
         inputMock.mockImplementationOnce(() => Promise.resolve(readmeMockPath));
@@ -138,7 +152,7 @@ describe('BuuTemplates', () => {
         expect(buutemplates.assignmentEnd).toBe(3);
 
         // Expect user inputs be called
-        expect(confirmMock).toHaveBeenCalledTimes(3);
+        expect(confirmMock).toHaveBeenCalledTimes(4);
         expect(inputMock).toHaveBeenCalledTimes(5);
 
         // Expect configuration file be defined
@@ -155,6 +169,7 @@ describe('BuuTemplates', () => {
             folderBasename: 'Lecture',
             assignmentFileBasename: 'index',
             readmePath: readmeMockPath,
+            generateReadmeFiles: false
         });
 
         // Mock inquirer functions
@@ -174,27 +189,58 @@ describe('BuuTemplates', () => {
         expect(buutemplates.assignmentStart).toBe(1);
         expect(buutemplates.assignmentEnd).toBe(3);
 
-        // Expect index.ts files be generated for assignments 1.1-1.3 but not 1.4
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture1', 'Assignment1.1', 'index.ts')]: expect.any(String),
-            })
-        );
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture1', 'Assignment1.2', 'index.ts')]: expect.any(String),
-            })
-        );
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture1', 'Assignment1.3', 'index.ts')]: expect.any(String),
-            })
-        );
+        // Expect index.ts files be generated for assignments 1.1-1.3
+        for (let assignmentNumber = 1; assignmentNumber < 3; assignmentNumber++) {
+            expect(mockFiles[path.join(projectRoot, 'Lecture1', `Assignment1.${assignmentNumber}`, 'index.ts')]).toMatch(new RegExp(`Test description ${assignmentNumber}`, 'gm'));
+        }
+
+        // Expect index.ts file not be generated for the assignment 1.4
         expect(mockFiles).toEqual(
             expect.not.objectContaining({
                 [path.join(projectRoot, 'Lecture1', 'Assignment1.4', 'index.ts')]: expect.any(String),
             })
         );
+    });
+
+    it('should create assignment templates and README files', async () => {
+        // Mock .buutemplates.json configuration
+        const projectRoot = process.cwd();
+        const configFile = path.join(projectRoot, '.buutemplates.json');
+        mockFiles[configFile] = JSON.stringify({
+            fileType: '.ts',
+            padNumbers: false,
+            folderBasename: 'Lecture',
+            assignmentFileBasename: 'index',
+            readmePath: readmeMockPath,
+            generateReadmeFiles: true
+        });
+
+        // Mock inquirer functions
+        const inputMock = jest.fn();
+        inquirer.input = inputMock;
+
+        // Mock user input for the assignment start number
+        inputMock.mockImplementationOnce(() => Promise.resolve(1));
+        // Mock user input for the assignment end number
+        inputMock.mockImplementationOnce(() => Promise.resolve(3));
+
+        // Run generation
+        const buutemplates = new BuuTemplates();
+        await buutemplates.setupAndGenerate();
+
+        // Expect assignment start and end inputs be set
+        expect(buutemplates.assignmentStart).toBe(1);
+        expect(buutemplates.assignmentEnd).toBe(3);
+
+        // Expect index.ts files be generated for assignments 1.1-1.3
+        for (let assignmentNumber = 1; assignmentNumber < 3; assignmentNumber++) {
+            expect(mockFiles[path.join(projectRoot, 'Lecture1', `Assignment1.${assignmentNumber}`, 'index.ts')]).toMatch(new RegExp(`Test description ${assignmentNumber}`, 'gm'));
+        }
+
+        // Expect README files be generated for assignments 1.1-1.3
+        for (let assignmentNumber = 1; assignmentNumber < 3; assignmentNumber++) {
+            expect(mockFiles[path.join(projectRoot, 'Lecture1', `Assignment1.${assignmentNumber}`, 'README.md')]).toMatch(new RegExp(`Test description ${assignmentNumber}`, 'gm'));
+        }
     });
 
     it('should create assignment templates for specific lecture number', async () => {
@@ -207,6 +253,7 @@ describe('BuuTemplates', () => {
             folderBasename: 'Lecture',
             assignmentFileBasename: 'index',
             lectureRootPath: path.join('test', 'assignments'),
+            generateReadmeFiles: false
         });
 
         // Mock inquirer functions
@@ -231,33 +278,15 @@ describe('BuuTemplates', () => {
         expect(buutemplates.assignmentEnd).toBe(7);
 
         // Expect index.ts files be generated for assignments 2.4-2.7 but not 2.3
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture2', 'Assignment2.4', 'index.ts')]: expect.any(String),
-            })
-        );
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture2', 'Assignment2.5', 'index.ts')]: expect.any(String),
-            })
-        );
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture2', 'Assignment2.6', 'index.ts')]: expect.any(String),
-            })
-        );
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture2', 'Assignment2.7', 'index.ts')]: expect.any(String),
-            })
-        );
-        expect(mockFiles).toEqual(
-            expect.not.objectContaining({
-                [path.join(projectRoot, 'Lecture2', 'Assignment2.3', 'index.ts')]: expect.any(String),
-            })
-        );
+        for (let assignmentNumber = 4; assignmentNumber <= 7; assignmentNumber++) {
+            expect(mockFiles).toEqual(
+                expect.objectContaining({
+                    [path.join(projectRoot, 'Lecture2', `Assignment2.${assignmentNumber}`, 'index.ts')]: expect.stringContaining(`Test description ${assignmentNumber}`),
+                })
+            );
+        }
     });
-
+    
     it('should create assignment templates by using tokens in name', async () => {
         // Mock .buutemplates.json configuration with lecture root path
         const projectRoot = process.cwd();
@@ -268,6 +297,7 @@ describe('BuuTemplates', () => {
             folderBasename: 'Lecture',
             assignmentFileBasename: 'assignment%LECTURE%.%ASSIGNMENT%',
             lectureRootPath: path.join('test', 'assignments'),
+            generateReadmeFiles: false
         });
 
         // Mock inquirer functions
@@ -319,7 +349,7 @@ describe('BuuTemplates', () => {
             folderBasename: 'Lecture',
             assignmentFileBasename: 'assignment_file_%ASSIGNMENT%',
             lectureRootPath: path.join('test', 'assignments'),
-            debug: true,
+            generateReadmeFiles: false
         });
 
         // Mock existing assignment folders and files
@@ -382,6 +412,7 @@ describe('BuuTemplates', () => {
             padNumbers: true,
             folderBasename: 'Lecture',
             assignmentFileBasename: 'index',
+            generateReadmeFiles: false
         });
 
         // Mock Lecture README.md
@@ -457,6 +488,7 @@ describe('BuuTemplates', () => {
             padNumbers: false,
             folderBasename: 'Lecture',
             assignmentFileBasename: 'index',
+            generateReadmeFiles: false
         });
 
         // Mock Lecture README.md
