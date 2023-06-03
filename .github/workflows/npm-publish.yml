@@ -10,13 +10,35 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [14.x, 16.x, 18.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16
-      - run: npm ci
-      - run: npm test
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    - run: npm install
+    - run: npm run lint --if-present
+    - run: npm run build --if-present
+    - run: npm test
+    - name: Check version consistency
+      run: |
+        package_version=$(node -pe "require('./package.json').version")
+        echo "Package version: $package_version"
+
+        readme_version=$(grep -oP "(?<=version-)\d+\.\d+\.\d+" README.md)
+        echo "README version: $readme_version"
+
+        if [[ "$package_version" != "$readme_version" ]]; then
+          echo "Error: Package version and README version mismatch!"
+          exit 1
+        fi
 
   publish-npm:
     needs: build
@@ -26,7 +48,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 18
           registry-url: https://registry.npmjs.org/
       - run: npm ci
       - run: npm publish
