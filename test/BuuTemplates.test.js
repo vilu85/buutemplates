@@ -89,7 +89,9 @@ describe('BuuTemplates', () => {
             '## Assignment 1.3: Test assignment 3\n\n' +
             'Test description\n\n' +
             '## Assignment 1.4: Test assignment 4\n\n' +
-            'Test description 4\n\n';
+            'Test description 4\n\n' +
+            '## Bonus Assignment 1.5: Test assignment 5\n\n' +
+            'Bonus test description 5\n\n';
 
         // Mock lecture 2 assignment README.md file
         mockFiles[path.join('test', 'assignments', 'Lecture2', 'README.md')] =
@@ -98,7 +100,7 @@ describe('BuuTemplates', () => {
             '## Assignment 2.2: Test assignment 2\n\n' +
             'Test description 2\n\n' +
             '## Assignment 2.3: Test assignment 3\n\n' +
-            'Test description\n\n' +
+            'Test description 3\n\n' +
             '## Assignment 2.4: Test assignment 4\n\n' +
             'Test description 4\n\n' +
             '## Assignment 2.5: Test assignment 5\n\n' +
@@ -293,6 +295,44 @@ describe('BuuTemplates', () => {
         }
     });
 
+    it('should create files for the bonus assignment', async () => {
+        // Mock .buutemplates.json configuration
+        const projectRoot = process.cwd();
+        const configFile = path.join(projectRoot, '.buutemplates.json');
+        mockFiles[configFile] = JSON.stringify({
+            fileType: '.ts',
+            padNumbers: false,
+            folderBasename: 'Lecture',
+            assignmentFileBasename: 'index',
+            readmePath: readmeMockPath,
+            generateReadmeFiles: true
+        });
+
+        // Mock inquirer functions
+        const inputMock = jest.fn();
+        inquirer.input = inputMock;
+
+        // Mock user input for the assignment start number
+        inputMock.mockImplementationOnce(() => Promise.resolve(4));
+        // Mock user input for the assignment end number
+        inputMock.mockImplementationOnce(() => Promise.resolve(5));
+
+        // Run generation
+        const buutemplates = new BuuTemplates();
+        await buutemplates.setupAndGenerate();
+
+        // Expect assignment start and end inputs be set
+        expect(buutemplates.assignmentStart).toBe(4);
+        expect(buutemplates.assignmentEnd).toBe(5);
+
+        // Expect index.ts file be generated for assignment 1.4
+        expect(mockFiles[path.join(projectRoot, 'Lecture1', `Assignment1.4`, 'index.ts')]).toMatch(new RegExp(`Test description 4`, 'gm'));
+
+        // Expect index.ts and README.md files be generated for the bonus assignment 1.5
+        expect(mockFiles[path.join(projectRoot, 'Lecture1', `Assignment1.5`, 'index.ts')]).toMatch(new RegExp(`Bonus test description 5`, 'gm'));
+        expect(mockFiles[path.join(projectRoot, 'Lecture1', `Assignment1.5`, 'README.md')]).toMatch(new RegExp(`Bonus test description 5`, 'gm'));
+    });
+
     it('should create assignment templates for specific lecture number', async () => {
         // Mock .buutemplates.json configuration with lecture root path
         const projectRoot = process.cwd();
@@ -329,15 +369,11 @@ describe('BuuTemplates', () => {
 
         // Expect index.ts files be generated for assignments 2.4-2.7 but not 2.3
         for (let assignmentNumber = 4; assignmentNumber <= 7; assignmentNumber++) {
-            expect(mockFiles).toEqual(
-                expect.objectContaining({
-                    [path.join(projectRoot, 'Lecture2', `Assignment2.${assignmentNumber}`, 'index.ts')]: expect.stringContaining(`Test description ${assignmentNumber}`),
-                })
-            );
+            expect(mockFiles[path.join(projectRoot, 'Lecture2', `Assignment2.${assignmentNumber}`, 'index.ts')]).toMatch(new RegExp(`Test description ${assignmentNumber}`, 'gm'));
         }
     });
     
-    it('should create assignment templates by using tokens in name', async () => {
+    it('should create the assignment files and replace the tokens in the filename', async () => {
         // Mock .buutemplates.json configuration with lecture root path
         const projectRoot = process.cwd();
         const configFile = path.join(projectRoot, '.buutemplates.json');
@@ -372,21 +408,9 @@ describe('BuuTemplates', () => {
         expect(buutemplates.assignmentEnd).toBe(3);
 
         // Expect assignmentX.XX.ts files be generated for assignments 2.1-2.3
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture2', 'Assignment2.1', 'assignment2.1.ts')]: expect.any(String),
-            })
-        );
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture2', 'Assignment2.2', 'assignment2.2.ts')]: expect.any(String),
-            })
-        );
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture2', 'Assignment2.3', 'assignment2.3.ts')]: expect.any(String),
-            })
-        );
+        for (let assignmentNumber = 1; assignmentNumber <= 3; assignmentNumber++) {
+            expect(mockFiles[path.join(projectRoot, 'Lecture2', `Assignment2.${assignmentNumber}`, `assignment2.${assignmentNumber}.ts`)]).toMatch(new RegExp(`Test description ${assignmentNumber}`, 'gm'));
+        }
     });
 
     it('should skip existing assignment files', async () => {
@@ -426,31 +450,13 @@ describe('BuuTemplates', () => {
         expect(buutemplates.assignmentStart).toBe(1);
         expect(buutemplates.assignmentEnd).toBe(4);
 
-        // Expect to skip assignment_file_X.ts files 1-3 and write 2.4
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture2', 'Assignment2.1', 'assignment_file_1.ts')]:
-                    expect.stringContaining('TODO'),
-            })
-        );
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture2', 'Assignment2.2', 'assignment_file_2.ts')]:
-                    expect.stringContaining('TODO'),
-            })
-        );
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture2', 'Assignment2.3', 'assignment_file_3.ts')]:
-                    expect.stringContaining('TODO'),
-            })
-        );
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture2', 'Assignment2.4', 'assignment_file_4.ts')]:
-                    expect.stringMatching(/Assignment 2\.4/gm),
-            })
-        );
+        // Expect to skip assignment_file_X.ts files 1-3
+        for (let assignmentNumber = 1; assignmentNumber <= 3; assignmentNumber++) {
+            expect(mockFiles[path.join(projectRoot, 'Lecture2', `Assignment2.${assignmentNumber}`, `assignment_file_${assignmentNumber}.ts`)]).toEqual('TODO');
+        }
+
+        // Expect to generate assignment_file_4.ts
+        expect(mockFiles[path.join(projectRoot, 'Lecture2', 'Assignment2.4', 'assignment_file_4.ts')]).toMatch(new RegExp('Assignment 2.4', 'gm'));
     });
 
     it('should generate folder structure and templates relative to README.md path', async () => {
@@ -472,7 +478,7 @@ describe('BuuTemplates', () => {
             '## Assignment 3.2: Test assignment 2\n\n' +
             'Test description 2\n\n' +
             '## Assignment 3.3: Test assignment 3\n\n' +
-            'Test description\n\n' +
+            'Test description 3\n\n' +
             '## Assignment 3.4: Test assignment 4\n\n' +
             'Test description 4\n\n' +
             '## Assignment 3.5: Test assignment 5\n\n' +
@@ -503,30 +509,9 @@ describe('BuuTemplates', () => {
         expect(buutemplates.assignmentEnd).toBe(7);
 
         // Expect index.ts files be generated for assignments 3.4-3.7 in path /relative/Lecture3/Assignment03.0X/index.ts
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture03', 'Assignment3.04', 'index.ts')]:
-                    expect.stringMatching(/Assignment 3\.4/gm),
-            })
-        );
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture03', 'Assignment3.05', 'index.ts')]:
-                    expect.stringMatching(/Assignment 3\.5/gm),
-            })
-        );
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture03', 'Assignment3.06', 'index.ts')]:
-                    expect.stringMatching(/Assignment 3\.6/gm),
-            })
-        );
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture03', 'Assignment3.07', 'index.ts')]:
-                    expect.stringMatching(/Assignment 3\.7/gm),
-            })
-        );
+        for (let assignmentNumber = 4; assignmentNumber <= 7; assignmentNumber++) {
+            expect(mockFiles[path.join(projectRoot, 'Lecture03', `Assignment3.0${assignmentNumber}`, 'index.ts')]).toMatch(new RegExp(`Assignment 3.${assignmentNumber}`, 'gm'));
+        }
     });
 
     it('should remove extra linebreaks from assignment description comment blocks', async () => {
@@ -548,7 +533,7 @@ describe('BuuTemplates', () => {
             '## Assignment 4.2: Test assignment 2\n\n' +
             'Test description 2\n\n\n\n' +
             '## Assignment 4.3: Test assignment 3\n\n' +
-            'Test description\n\n\n\n\n\n';
+            'Test description 3\n\n\n\n\n\n';
 
         // Mock inquirer functions
         const inputMock = jest.fn();
@@ -571,24 +556,9 @@ describe('BuuTemplates', () => {
         expect(buutemplates.assignmentEnd).toBe(3);
 
         // Expect that the empty lines have been removed from the end
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture4', 'Assignment4.1', 'index.ts')]:
-                    '/**\n * ## Assignment 4.1: Test assignment 1\n * \n * Test description 1\n */\n',
-            })
-        );
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture4', 'Assignment4.2', 'index.ts')]:
-                    '/**\n * ## Assignment 4.2: Test assignment 2\n * \n * Test description 2\n */\n',
-            })
-        );
-        expect(mockFiles).toEqual(
-            expect.objectContaining({
-                [path.join(projectRoot, 'Lecture4', 'Assignment4.3', 'index.ts')]:
-                    '/**\n * ## Assignment 4.3: Test assignment 3\n * \n * Test description\n */\n',
-            })
-        );
+        for (let assignmentNumber = 1; assignmentNumber <= 3; assignmentNumber++) {
+            expect(mockFiles[path.join(projectRoot, 'Lecture4', `Assignment4.${assignmentNumber}`, 'index.ts')]).toEqual(`/**\n * ## Assignment 4.${assignmentNumber}: Test assignment ${assignmentNumber}\n * \n * Test description ${assignmentNumber}\n */\n`);
+        }
     });
 
     it('should split lines that exceeds over 80 chars', async () => {
