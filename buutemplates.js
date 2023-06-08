@@ -83,6 +83,11 @@ export class BuuTemplates {
     readmeMappings = [];
 
     /**
+     * Counts assignment script file generation errors during in `fileContentProvider` function.
+     */
+    generationErrorCounter = 0;
+
+    /**
      * Lecture and assignment file structure style options
      * @type {{
      *  name: string,
@@ -406,6 +411,11 @@ export class BuuTemplates {
         return json;
     }
 
+    /**
+     * Returns assignment entry or undefined if the entry does not exist.
+     * @param {string|number} num 
+     * @returns {string[]|undefined}
+     */
     getAssignmentEntry(num) {
         return this.assignmentCommentBlocks.find((value) => {
             return Object.keys(value)[0] === String(num);
@@ -464,20 +474,28 @@ export class BuuTemplates {
      * @param {number} _lectureNumber
      * @param {number} assignmentNumber
      * @param {string} folderPath
+     * @returns {string}
      */
     fileContentProvider(_lectureNumber, assignmentNumber, folderPath) {
-        const _assignmentNumber = '' + assignmentNumber;
-        const assignmentEntry = this.getAssignmentEntry(assignmentNumber);
-        const data = this.generateIndexTs(_assignmentNumber, assignmentEntry);
-        if (data) {
-            this.readmeMappings.push({ [String(assignmentNumber)]: folderPath });
+        try {
+            const _assignmentNumber = '' + assignmentNumber;
+            const assignmentEntry = this.getAssignmentEntry(assignmentNumber);
+            const data = this.generateIndexTs(_assignmentNumber, assignmentEntry);
+            if (data) {
+                this.readmeMappings.push({ [String(assignmentNumber)]: folderPath });
+            }
+            return data;
+        } catch (error) {
+            console.log(`Error: `, error.message );
+            this.generationErrorCounter += 1;
+            return '';
         }
-        return data;
     }
 
     async generateTemplates() {
+        console.log(`Generating ${this.assignmentEnd - this.assignmentStart + 1} index.ts files...`);
+
         if (this.assignmentCommentBlocks && this.assignmentCommentBlocks.length) {
-            console.log(`Generating ${this.assignmentEnd - this.assignmentStart + 1} index.ts files...`);
             generateFolderRange(
                 Number(this.lectureNumber),
                 Number(this.assignmentStart),
@@ -487,7 +505,7 @@ export class BuuTemplates {
             );
 
             if (this.options.generateReadmeFiles) {
-                console.log(`Generating ${this.assignmentEnd - this.assignmentStart + 1} README.md files...`);
+                console.log(`Generating ${this.assignmentEnd - this.assignmentStart + 1 - this.generationErrorCounter} README.md files...`);
                 this.generateReadmeFiles(this.readmeMappings, this.assignments);
             }
         } else {
@@ -586,17 +604,17 @@ export class BuuTemplates {
             this.parsedLectureNumber = Number(parsedLecture[1]);
         }
 
-        const regex = /(?=## Assignment \d+\.\d+:)/;
+        const regex = /(?=## [\w ]*Assignment \d+\.\d+:)/;
         const blocks = content.split(regex).map((block) => {
             return block;
         });
 
         // Filter assignments from content blocks
-        const filteredBlocks = blocks.filter((value) => value.match(/(?=## Assignment \d+\.\d+:)/));
+        const filteredBlocks = blocks.filter((value) => value.match(regex));
         if (filteredBlocks) {
             // Map filtered blocks to the array in form: assignment number => assignment description
             this.assignmentCommentBlocks = filteredBlocks.map((value) => {
-                const assignmentNumber = value.match(/## Assignment (\d+)\.(\d+)/);
+                const assignmentNumber = value.match(/## [\w+ ]*Assignment (\d+)\.(\d+)/);
                 const assignmentContent = value.split(/\r?\n/);
                 return {
                     [`${assignmentNumber[2]}`]: assignmentContent,
