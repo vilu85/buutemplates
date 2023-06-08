@@ -604,7 +604,7 @@ export class BuuTemplates {
             this.parsedLectureNumber = Number(parsedLecture[1]);
         }
 
-        const regex = /(?=## [\w ]*Assignment \d+\.\d+:)/;
+        const regex = /(?=## [\w ]*Assignment \d+\.\d+)/;
         const blocks = content.split(regex).map((block) => {
             return block;
         });
