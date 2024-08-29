@@ -1,6 +1,6 @@
 {
   "name": "buutemplates",
-  "version": "1.2.3.2",
+  "version": "1.2.4",
   "description": "Generates templates for Buutti assignments",
   "main": "index.js",
   "type": "module",
@@ -12,7 +12,7 @@
     "lint": "eslint ."
   },
   "bin": {
-    "buutemplates": "./index.js"
+    "buutemplates": "index.js"
   },
   "repository": {
     "type": "git",
