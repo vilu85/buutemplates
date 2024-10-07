@@ -31,7 +31,7 @@
   },
   "homepage": "https://github.com/vilu85/buutemplates#readme",
   "dependencies": {
-    "@inquirer/prompts": "^6.0.1",
+    "@inquirer/prompts": "^7.0.0",
     "buufolders": "^1.0.8",
     "colors": "^1.4.0"
   },
