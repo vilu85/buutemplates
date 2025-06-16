@@ -42,13 +42,13 @@
     "@babel/register": "^7.21.0",
     "@eslint/eslintrc": "^3.1.0",
     "@eslint/js": "^9.7.0",
-    "@types/jest": "^29.5.1",
+    "@types/jest": "^30.0.0",
     "babel-jest": "^30.0.0",
     "editorconfig": "^3.0.0",
     "eslint": "^9.8.0",
     "eslint-plugin-jest": "^28.5.0",
     "globals": "^16.0.0",
-    "jest": "^29.5.0",
+    "jest": "^30.0.0",
     "nodemon": "^3.0.1",
     "prettier": "^3.0.0"
   }
