@@ -46,7 +46,7 @@
     "babel-jest": "^30.0.0",
     "editorconfig": "^3.0.0",
     "eslint": "^9.8.0",
-    "eslint-plugin-jest": "^28.5.0",
+    "eslint-plugin-jest": "^29.0.1",
     "globals": "^16.0.0",
     "jest": "^30.0.0",
     "nodemon": "^3.0.1",
