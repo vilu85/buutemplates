@@ -2,9 +2,9 @@ import { jest } from '@jest/globals';
 
 // mock @inquirer/prompts BEFORE it's imported by buutemplates.js
 await jest.unstable_mockModule('@inquirer/prompts', () => ({
-  input: jest.fn(),
-  confirm: jest.fn(),
-  select: jest.fn(),
+    input: jest.fn(),
+    confirm: jest.fn(),
+    select: jest.fn(),
 }));
 
 const inquirer = await import('@inquirer/prompts');
@@ -171,6 +171,4 @@ describe('BuuTemplates', () => {
             expect.objectContaining(buutemplates.structureStyles.find( value => value.value === 'assignmentWithoutPadding').options)
         );
     });
-
-    // rest of tests unchanged...
-
+});
