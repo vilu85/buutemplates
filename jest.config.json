@@ -1,7 +1,0 @@
-{
-    "transformIgnorePatterns": [
-        "node_modules/(?!(strip-ansi|ansi-regex|test-json-import|inquirer|@inquirer)/)"
-    ],
-    "testEnvironment": "node",
-    "verbose": true
-}

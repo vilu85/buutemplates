@@ -1,10 +1,7 @@
-const inquirer = require('@inquirer/prompts');
-
+import inquirer from '@inquirer/prompts';
 import { BuuTemplates } from '../buutemplates.js';
+import path from 'path';
 
-// eslint-disable-next-line no-unused-vars
-const fs = require('fs');
-const path = require('path');
 const projectRoot = process.cwd();
 
 // Setup readme file mock path

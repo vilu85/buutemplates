@@ -1,55 +1,55 @@
 {
-  "name": "buutemplates",
-  "version": "1.2.4",
-  "description": "Generates templates for Buutti assignments",
-  "main": "index.js",
-  "type": "module",
-  "scripts": {
-    "start": "node index.js",
-    "test": "jest",
-    "watch": "nodemon ./index.js",
-    "buutemplates": "node index.js",
-    "lint": "eslint ."
-  },
-  "bin": {
-    "buutemplates": "index.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/vilu85/buutemplates.git"
-  },
-  "keywords": [
-    "generator",
-    "utilitity",
-    "buutti",
-    "templates"
-  ],
-  "author": "Ville Perkkio",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/vilu85/buutemplates/issues"
-  },
-  "homepage": "https://github.com/vilu85/buutemplates#readme",
-  "dependencies": {
-    "@inquirer/prompts": "^7.0.0",
-    "buufolders": "^1.0.8",
-    "colors": "^1.4.0"
-  },
-  "devDependencies": {
-    "@babel/core": "^7.21.8",
-    "@babel/plugin-syntax-import-assertions": "^7.20.0",
-    "@babel/preset-env": "^7.21.5",
-    "@babel/register": "^7.21.0",
-    "@eslint/eslintrc": "^3.1.0",
-    "@eslint/js": "^9.7.0",
-    "@types/jest": "^30.0.0",
-    "babel-jest": "^30.0.0",
-    "editorconfig": "^3.0.0",
-    "eslint": "^9.8.0",
-    "eslint-plugin-jest": "^29.0.1",
-    "globals": "^16.0.0",
-    "jest": "^30.0.0",
-    "nodemon": "^3.0.1",
-    "prettier": "^3.0.0"
-  }
+    "name": "buutemplates",
+    "version": "1.2.4",
+    "description": "Generates templates for Buutti assignments",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "start": "node index.js",
+        "test": "jest",
+        "watch": "nodemon ./index.js",
+        "buutemplates": "node index.js",
+        "lint": "eslint ."
+    },
+    "bin": {
+        "buutemplates": "index.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/vilu85/buutemplates.git"
+    },
+    "keywords": [
+        "generator",
+        "utilitity",
+        "buutti",
+        "templates"
+    ],
+    "author": "Ville Perkkio",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/vilu85/buutemplates/issues"
+    },
+    "homepage": "https://github.com/vilu85/buutemplates#readme",
+    "dependencies": {
+        "@inquirer/prompts": "^8.0.1",
+        "buufolders": "^1.0.8",
+        "colors": "^1.4.0"
+    },
+    "devDependencies": {
+        "@babel/core": "^7.28.5",
+        "@babel/plugin-syntax-import-assertions": "^7.20.0",
+        "@babel/preset-env": "^7.28.5",
+        "@babel/register": "^7.21.0",
+        "@eslint/eslintrc": "^3.3.3",
+        "@eslint/js": "^9.7.0",
+        "@types/jest": "^30.0.0",
+        "babel-jest": "^30.2.0",
+        "editorconfig": "^3.0.0",
+        "eslint": "^9.39.1",
+        "eslint-plugin-jest": "^29.2.1",
+        "globals": "^16.0.0",
+        "jest": "^30.0.0",
+        "nodemon": "^3.0.1",
+        "prettier": "^3.7.2"
+    }
 }
