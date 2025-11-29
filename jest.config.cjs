@@ -4,8 +4,8 @@ module.exports = {
         '^.+\\.jsx?$': 'babel-jest',
     },
     testEnvironment: 'node',
-    // Allow babel-jest to transform the ESM package we depend on
-    transformIgnorePatterns: ['/node_modules/(?!@inquirer/prompts)'],
+    // Allow transforming all @inquirer packages (prompts, checkbox, core, etc.)
+    transformIgnorePatterns: ['/node_modules/(?!@inquirer)'],
     // Tell babel-jest to operate in ESM mode
     globals: {
         'babel-jest': {
