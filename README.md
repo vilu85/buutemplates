@@ -1,4 +1,4 @@
-![Version](https://img.shields.io/badge/version-1.2.4-blue.svg?cacheSeconds=2592000)
+![Version](https://img.shields.io/badge/version-1.2.5-blue.svg?cacheSeconds=2592000)
 ![Node.js](https://github.com/vilu85/buutemplates/actions/workflows/node.js.yml/badge.svg)
 [![NPM publish](https://github.com/vilu85/buutemplates/actions/workflows/npm-publish-node18.yml/badge.svg)](https://github.com/vilu85/buutemplates/actions/workflows/npm-publish-node18.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](#)
