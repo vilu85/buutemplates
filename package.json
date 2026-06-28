@@ -38,7 +38,7 @@
   "devDependencies": {
     "@babel/core": "^7.21.8",
     "@babel/plugin-syntax-import-assertions": "^7.20.0",
-    "@babel/preset-env": "^7.21.5",
+    "@babel/preset-env": "^8.0.2",
     "@babel/register": "^7.21.0",
     "@eslint/eslintrc": "^3.3.4",
     "@eslint/js": "^10.0.1",
