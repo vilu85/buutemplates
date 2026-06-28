@@ -400,7 +400,7 @@ export class BuuTemplates {
         try {
             const { size } = fs.statSync(path);
             return !!size;
-        } catch (error) {
+        } catch (_error) {
             return false;
         }
     }
